@@ -30,9 +30,16 @@ par catégorie, l'application :
 python -m venv venv
 venv\Scripts\activate
 
-# 2. Installer les librairies
+# 2a. Installer les librairies du dashboard
 pip install -r requirements.txt
+
+# 2b. (optionnel) Pour régénérer les prévisions et probabilités : ajouter Prophet/scipy
+pip install -r requirements-dev.txt
 ```
+
+> Le dashboard (`app.py`) ne lit que des fichiers CSV : il n'a besoin que de
+> `requirements.txt`. Prophet et scipy (dans `requirements-dev.txt`) ne servent
+> qu'aux scripts `forecast.py` et `prediction_atteinte.py`.
 
 ## Utilisation
 

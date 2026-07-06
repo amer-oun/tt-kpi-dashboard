@@ -1,0 +1,6 @@
+# Librairies SUPPLEMENTAIRES pour regenerer les donnees en local
+# (prevision, probabilite d'atteinte). A installer en plus de requirements.txt :
+#     pip install -r requirements-dev.txt
+-r requirements.txt
+prophet>=1.1
+scipy>=1.11
