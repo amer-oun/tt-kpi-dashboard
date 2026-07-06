@@ -1,0 +1,9 @@
+# Environnement virtuel (lourd, se recree avec requirements.txt)
+venv/
+
+# Caches Python
+__pycache__/
+*.pyc
+
+# Secrets Streamlit (au cas ou)
+.streamlit/secrets.toml

@@ -1,0 +1,11 @@
+# Theme global du dashboard (lu automatiquement par Streamlit au demarrage).
+# Direction "console de supervision telecom" : bleu nuit + bleu TT, fond clair.
+[theme]
+primaryColor = "#0072BC"            # bleu Tunisie Telecom (accents, onglet actif, boutons)
+backgroundColor = "#EEF3F8"         # fond general (bleu-gris tres clair)
+secondaryBackgroundColor = "#FFFFFF" # fond des cartes et de la barre laterale
+textColor = "#12263A"               # encre (bleu nuit tres fonce)
+font = "sans serif"
+
+[server]
+headless = true

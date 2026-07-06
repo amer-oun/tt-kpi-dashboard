@@ -1,0 +1,5 @@
+categorie,annee,realise_connu,prevu_restant,total_estime,objectif_annuel,ecart_a_combler,taux_estime_pct,probabilite_atteinte_pct
+Internet Fixe,2026,8579,7603,16182,16709,527,96.8,0.0
+Internet Fixe,2027,0,17589,17589,18935,1346,92.9,0.0
+Mobile,2026,10353,9577,19930,20260,330,98.4,0.0
+Mobile,2027,0,21813,21813,23135,1322,94.3,0.0

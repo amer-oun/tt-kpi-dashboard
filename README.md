@@ -1,0 +1,103 @@
+# KPI de vente — Tunisie Télécom
+
+Application de **calcul, suivi et prévision** des indicateurs de performance
+(KPI) de vente, réalisée dans le cadre d'un **Projet de Fin d'Études** (Licence
+Appliquée) chez Tunisie Télécom.
+
+À partir des ventes journalières par sous-catégorie et des objectifs mensuels
+par catégorie, l'application :
+
+1. calcule le **cumul mensuel** des ventes et le **taux de réalisation** vs objectif ;
+2. suit le **cumul annuel** (réalisé cumulé vs objectif cumulé) ;
+3. visualise le tout dans un **dashboard interactif** (Streamlit) ;
+4. **prévoit** les ventes futures (Machine Learning — modèle Prophet) ;
+5. estime la **probabilité d'atteindre l'objectif annuel** ;
+6. **détecte les jours de vente anormaux** (z-score).
+
+## Stack technique
+
+- **Python 3.14** (environnement virtuel `venv`)
+- **pandas / numpy** — manipulation des données
+- **Plotly** — graphiques interactifs
+- **Streamlit** — dashboard web
+- **Prophet** — prévision de séries temporelles
+- **scipy** — calcul de probabilité (loi normale)
+
+## Installation
+
+```bash
+# 1. Créer et activer l'environnement virtuel (Windows)
+python -m venv venv
+venv\Scripts\activate
+
+# 2. Installer les librairies
+pip install -r requirements.txt
+```
+
+## Utilisation
+
+### Lancer le dashboard (interface principale)
+
+```bash
+streamlit run app.py
+```
+
+### Régénérer les données de calcul (après modification des CSV sources)
+
+Les scripts s'exécutent **dans cet ordre** (chacun produit un fichier que le
+suivant peut utiliser) :
+
+```bash
+python forecast.py             # prévision Prophet        -> data/prevision.csv
+python calcul_kpi.py           # KPI mensuels             -> data/kpi_mensuel.csv
+python prediction_atteinte.py  # probabilité d'atteinte   -> data/atteinte_objectif.csv
+python anomalies.py            # anomalies (z-score)      -> data/anomalies.csv
+```
+
+Le dashboard relit automatiquement ces fichiers (bouton **Rerun** dans le navigateur).
+
+## Structure du projet
+
+```
+tt_kpi/
+├── data/
+│   ├── ventes.csv              # ventes journalières (source)
+│   ├── objectifs.csv           # objectifs mensuels par catégorie (source)
+│   ├── kpi_mensuel.csv         # généré par calcul_kpi.py
+│   ├── prevision.csv           # généré par forecast.py
+│   ├── atteinte_objectif.csv   # généré par prediction_atteinte.py
+│   └── anomalies.csv           # généré par anomalies.py
+├── assets/
+│   └── logo_tt.png             # logo affiché dans le dashboard
+├── kpi.py                      # module partagé : calcul des KPI
+├── decouverte.py               # aperçu des données
+├── calcul_kpi.py               # calcul des KPI mensuels
+├── forecast.py                 # prévision Prophet
+├── prediction_atteinte.py      # probabilité d'atteinte de l'objectif annuel
+├── anomalies.py                # détection des jours de vente anormaux
+├── app.py                      # dashboard Streamlit (interface)
+├── requirements.txt            # librairies à installer
+└── README.md                   # ce fichier
+```
+
+## Modèle de données
+
+**`data/ventes.csv`** — une ligne = ventes d'une sous-catégorie un jour donné :
+
+| date | categorie | sous_categorie | quantite |
+|------|-----------|----------------|----------|
+| 2026-01-01 | Internet Fixe | Rapido | 6 |
+
+**`data/objectifs.csv`** — un objectif mensuel par catégorie :
+
+| categorie | annee | mois | objectif_mensuel |
+|-----------|-------|------|------------------|
+| Internet Fixe | 2026 | 1 | 1309 |
+
+> Les données actuelles sont **simulées** (démo) et couvrent 2024, 2025 et
+> janvier→juin 2026. Les mois suivants sont ceux que le module de prévision estime.
+
+## Note
+
+Projet réalisé dans un cadre pédagogique. Les données sont simulées et ne
+reflètent pas les chiffres réels de Tunisie Télécom.

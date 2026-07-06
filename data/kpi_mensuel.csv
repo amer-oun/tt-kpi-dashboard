@@ -1,0 +1,13 @@
+categorie,annee,mois,ventes_reelles,objectif_mensuel,taux_atteinte_pct,ecart
+Internet Fixe,2026,1,1367,1309,104.4,58
+Internet Fixe,2026,2,1321,1429,92.4,-108
+Internet Fixe,2026,3,1470,1674,87.8,-204
+Internet Fixe,2026,4,1495,1511,98.9,-16
+Internet Fixe,2026,5,1459,1637,89.1,-178
+Internet Fixe,2026,6,1467,1426,102.9,41
+Mobile,2026,1,1576,1604,98.3,-28
+Mobile,2026,2,1563,1515,103.2,48
+Mobile,2026,3,1830,1851,98.9,-21
+Mobile,2026,4,1900,1754,108.3,146
+Mobile,2026,5,1825,1925,94.8,-100
+Mobile,2026,6,1659,1765,94.0,-106
