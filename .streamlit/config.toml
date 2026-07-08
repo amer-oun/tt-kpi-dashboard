@@ -2,9 +2,9 @@
 # Direction "console de supervision telecom" : bleu nuit + bleu TT, fond clair.
 [theme]
 primaryColor = "#0072BC"            # bleu Tunisie Telecom (accents, onglet actif, boutons)
-backgroundColor = "#EEF3F8"         # fond general (bleu-gris tres clair)
+backgroundColor = "#F8FAFC"         # fond general (blanc bleute - style dashboard BI)
 secondaryBackgroundColor = "#FFFFFF" # fond des cartes et de la barre laterale
-textColor = "#12263A"               # encre (bleu nuit tres fonce)
+textColor = "#1E293B"               # encre (bleu ardoise fonce)
 font = "sans serif"
 
 [server]

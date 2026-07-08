@@ -14,6 +14,7 @@ from kpi import preparer_ventes, calculer_kpi
 # ============================================================================
 NUIT = "#0A2A4A"     # bleu nuit (en-tetes, chiffres)
 BLEU = "#0072BC"     # bleu Tunisie Telecom (accent principal)
+AMBRE = "#D97706"    # accent (bouton d'action) - recommande par la skill UI/UX
 ROUGE = "#D62828"    # rouge (rappel drapeau) : alertes / objectif manque de loin
 VERT = "#1B9C6B"     # objectif atteint
 ORANGE = "#E8833A"   # proche de l'objectif
@@ -82,11 +83,40 @@ def barres_signal(taux, couleur):
     return f'<div class="sig-wrap">{barres}</div>'
 
 
-def carte_kpi(titre, valeur, sous_texte="", couleur=BLEU, extra_html=""):
-    """Fabrique une carte KPI HTML (chiffre en monospace facon telemetrie)."""
+# Petites icones SVG (style Lucide, trait 2px) : la skill UI/UX interdit les
+# emoji comme icones. On les integre en HTML dans les cartes.
+ICONES = {
+    "ventes": '<path d="M22 7 13.5 15.5 8.5 10.5 2 17"/><path d="M16 7h6v6"/>',
+    "objectif": '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4"/>',
+    "taux": '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+    "annuel": '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+}
+
+
+def icone_svg(nom, couleur):
+    """Renvoie une petite icone SVG coloree (ou rien si le nom est inconnu)."""
+    trace = ICONES.get(nom)
+    if not trace:
+        return ""
+    return (
+        f'<svg class="tt-card-icone" width="20" height="20" viewBox="0 0 24 24" '
+        f'fill="none" stroke="{couleur}" stroke-width="2" stroke-linecap="round" '
+        f'stroke-linejoin="round">{trace}</svg>'
+    )
+
+
+def carte_kpi(titre, valeur, sous_texte="", couleur=BLEU, extra_html="", icone="", delai=0):
+    """Fabrique une carte KPI HTML (chiffre en Fira Code facon telemetrie).
+
+    - icone : nom d'une icone SVG (voir ICONES) affichee en haut a droite ;
+    - delai : decalage d'apparition (en secondes) pour l'effet de cascade.
+    """
     return f"""
-    <div class="tt-card" style="border-top: 3px solid {couleur};">
-        <div class="tt-card-titre">{titre}</div>
+    <div class="tt-card" style="border-top: 3px solid {couleur}; animation-delay: {delai}s;">
+        <div class="tt-card-entete">
+            <div class="tt-card-titre">{titre}</div>
+            {icone_svg(icone, couleur)}
+        </div>
         <div class="tt-card-valeur">{valeur}</div>
         <div class="tt-card-sous" style="color:{couleur};">{sous_texte}</div>
         {extra_html}
@@ -110,77 +140,117 @@ st.set_page_config(
 st.markdown(
     f"""
     <style>
-    html, body, [class*="css"] {{
-        font-family: "Segoe UI", -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    /* Typographie "data/analytics" recommandee par la skill UI/UX :
+       Fira Sans (texte) + Fira Code (chiffres). Repli sur les polices systeme
+       si la connexion echoue -> le dashboard reste lisible hors-ligne. */
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@500;600;700&family=Fira+Sans:wght@400;500;600;700&display=swap');
+
+    :root {{
+        --tt-nuit:{NUIT}; --tt-bleu:{BLEU}; --tt-ambre:{AMBRE};
+        --tt-fond:#F8FAFC; --tt-surface:#FFFFFF; --tt-bordure:#DCE6F1;
+        --tt-texte:#1E293B; --tt-muet:#5B7086;
+        --sans:"Fira Sans","Segoe UI",-apple-system,Roboto,Helvetica,Arial,sans-serif;
+        --mono:"Fira Code",Consolas,"SF Mono","Roboto Mono",monospace;
     }}
-    .block-container {{ padding-top: 1.4rem; padding-bottom: 2.5rem; max-width: 1250px; }}
+    html, body, [class*="css"] {{ font-family: var(--sans); }}
+    /* densite "dashboard" : marges resserrees */
+    .block-container {{ padding-top: 1.2rem; padding-bottom: 2.5rem; max-width: 1280px; }}
 
     /* ---------- Bandeau d'en-tete (masthead) ---------- */
     .tt-masthead {{
         position: relative; overflow: hidden;
         background:
             radial-gradient(circle at 92% -30%, rgba(0,114,188,.45), transparent 45%),
-            linear-gradient(120deg, {NUIT} 0%, #0E3A63 100%);
-        border-radius: 16px; padding: 26px 30px 30px 30px; margin-bottom: 24px;
+            linear-gradient(120deg, var(--tt-nuit) 0%, #0E3A63 100%);
+        border-radius: 16px; padding: 24px 30px 28px 30px; margin-bottom: 22px;
         box-shadow: 0 8px 24px rgba(10,42,74,.20);
+        animation: apparition .5s ease both;
     }}
     /* liseré bleu -> rouge en bas : clin d'oeil au drapeau tunisien */
     .tt-masthead::after {{
         content: ""; position: absolute; left: 0; bottom: 0; height: 4px; width: 100%;
-        background: linear-gradient(90deg, {BLEU} 0%, {BLEU} 62%, {ROUGE} 62%, {ROUGE} 100%);
+        background: linear-gradient(90deg, var(--tt-bleu) 0%, var(--tt-bleu) 62%, {ROUGE} 62%, {ROUGE} 100%);
     }}
     .tt-brand {{ display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }}
     .tt-mark {{
-        width: 42px; height: 42px; border-radius: 10px; background: #fff; color: {NUIT};
+        width: 42px; height: 42px; border-radius: 10px; background: #fff; color: var(--tt-nuit);
         font-weight: 800; font-size: 17px; letter-spacing: 1px;
         display: flex; align-items: center; justify-content: center;
     }}
-    /* On prefixe par .tt-masthead + !important pour battre le CSS par defaut
-       de Streamlit qui, sinon, force les titres en couleur foncee (illisible
-       sur le fond bleu nuit). */
     .tt-masthead .tt-op {{ color: #cfe4f7 !important; font-size: 13px; font-weight: 600;
              text-transform: uppercase; letter-spacing: 2.5px; }}
     .tt-masthead .tt-title {{ color: #ffffff !important; margin: 0; font-size: 30px;
-             font-weight: 800; letter-spacing: -0.5px; }}
+             font-weight: 700; letter-spacing: -0.5px; }}
     .tt-masthead .tt-sub   {{ color: #9fc4e6 !important; margin: 6px 0 0 0; font-size: 14px;
              letter-spacing: .3px; }}
     .tt-logo-img {{ height: 62px; width: auto; background: #fff; padding: 8px 12px;
              border-radius: 12px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,.12); }}
 
-    /* ---------- Cartes KPI ---------- */
+    /* ---------- Cartes KPI (style data-dense + survol) ---------- */
     .tt-card {{
-        background: #fff; border: 1px solid #E3EAF1; border-radius: 14px;
-        padding: 16px 20px 18px 20px; box-shadow: 0 3px 10px rgba(10,42,74,.05);
-        animation: apparition .45s ease both;
+        background: var(--tt-surface); border: 1px solid var(--tt-bordure); border-radius: 14px;
+        padding: 15px 18px 16px 18px; box-shadow: 0 2px 8px rgba(10,42,74,.05);
+        animation: apparition .5s ease both;
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
     }}
-    .tt-card-titre {{ color: #5B7086; font-size: 12px; font-weight: 700;
-                     text-transform: uppercase; letter-spacing: .9px; }}
+    .tt-card:hover {{
+        transform: translateY(-3px);
+        box-shadow: 0 10px 22px rgba(10,42,74,.12);
+        border-color: #C3D4E8;
+    }}
+    .tt-card-entete {{ display: flex; align-items: center; justify-content: space-between; }}
+    .tt-card-icone {{ opacity: .85; flex-shrink: 0; }}
+    .tt-card-titre {{ color: var(--tt-muet); font-size: 12px; font-weight: 600;
+                     text-transform: uppercase; letter-spacing: .8px; }}
     .tt-card-valeur {{
-        color: {NUIT}; font-family: Consolas, "SF Mono", "Roboto Mono", monospace;
-        font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums;
+        color: var(--tt-nuit); font-family: var(--mono);
+        font-size: 31px; font-weight: 600; font-variant-numeric: tabular-nums;
         margin-top: 6px; line-height: 1.1;
     }}
     .tt-card-sous {{ font-size: 13px; font-weight: 600; margin-top: 4px; }}
 
     /* ---------- Barres de signal (signature) ---------- */
     .sig-wrap {{ display: flex; align-items: flex-end; gap: 4px; height: 34px; margin-top: 10px; }}
-    .sig-bar  {{ width: 9px; border-radius: 2px; }}
+    .sig-bar  {{ width: 9px; border-radius: 2px; transition: height .3s ease; }}
+
+    /* ---------- Bouton d'action : accent ambre (skill UI/UX) ---------- */
+    .stDownloadButton button {{
+        background: var(--tt-ambre) !important; color: #fff !important; border: none !important;
+        border-radius: 9px !important; font-weight: 600 !important; padding: 8px 18px !important;
+        transition: filter .2s ease, transform .2s ease !important;
+    }}
+    .stDownloadButton button:hover {{ filter: brightness(1.08); transform: translateY(-1px); }}
 
     /* ---------- Onglets facon segmented control ---------- */
     .stTabs [data-baseweb="tab-list"] {{
-        gap: 4px; background: #E2EAF2; padding: 5px; border-radius: 12px;
+        gap: 4px; background: #E6EDF5; padding: 5px; border-radius: 12px;
     }}
     .stTabs [data-baseweb="tab"] {{
         border-radius: 9px; padding: 8px 16px; font-weight: 600; font-size: 14px; color: #3A5068;
+        transition: background .2s ease, color .2s ease;
     }}
-    .stTabs [aria-selected="true"] {{ background: {NUIT} !important; color: #fff !important; }}
+    .stTabs [data-baseweb="tab"]:hover {{ background: #d5e2f0; }}
+    .stTabs [aria-selected="true"] {{ background: var(--tt-nuit) !important; color: #fff !important; }}
     .stTabs [data-baseweb="tab-highlight"], .stTabs [data-baseweb="tab-border"] {{ display: none; }}
 
-    h2, h3 {{ color: {NUIT}; letter-spacing: -0.3px; }}
+    /* Chiffres du tableau alignes (chiffres tabulaires) */
+    [data-testid="stDataFrame"] {{ font-variant-numeric: tabular-nums; }}
 
-    @keyframes apparition {{ from {{ opacity: 0; transform: translateY(6px); }}
+    h2, h3 {{ color: var(--tt-nuit); letter-spacing: -0.3px; }}
+
+    /* Focus clavier visible (accessibilite - checklist de la skill) */
+    a:focus-visible, button:focus-visible, [data-baseweb="tab"]:focus-visible {{
+        outline: 3px solid rgba(0,114,188,.55); outline-offset: 2px; border-radius: 8px;
+    }}
+
+    @keyframes apparition {{ from {{ opacity: 0; transform: translateY(8px); }}
                             to {{ opacity: 1; transform: translateY(0); }} }}
-    @media (prefers-reduced-motion: reduce) {{ .tt-card {{ animation: none; }} }}
+    /* Respect de prefers-reduced-motion (accessibilite) */
+    @media (prefers-reduced-motion: reduce) {{
+        .tt-card, .tt-masthead {{ animation: none; }}
+        .tt-card, .sig-bar, .stTabs [data-baseweb="tab"], .stDownloadButton button {{ transition: none; }}
+        .tt-card:hover {{ transform: none; }}
+    }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -238,11 +308,14 @@ ecart_global = total_realise - total_objectif
 couleur_taux = couleur_selon_taux(taux_global)
 
 colonne_1, colonne_2, colonne_3 = st.columns(3)
+# delai croissant -> les cartes apparaissent en cascade (effet "stagger")
 colonne_1.markdown(
     carte_kpi(
         "Ventes realisees (cumul)",
         f"{total_realise:,}".replace(",", " "),
         f"{categorie_choisie} - {annee_choisie}",
+        icone="ventes",
+        delai=0.00,
     ),
     unsafe_allow_html=True,
 )
@@ -252,6 +325,8 @@ colonne_2.markdown(
         f"{total_objectif:,}".replace(",", " "),
         "cible sur la periode",
         couleur=GRIS,
+        icone="objectif",
+        delai=0.08,
     ),
     unsafe_allow_html=True,
 )
@@ -262,6 +337,8 @@ colonne_3.markdown(
         f"ecart : {ecart_global:+} ventes" if taux_global is not None else "",
         couleur=couleur_taux,
         extra_html=barres_signal(taux_global, couleur_taux),
+        icone="taux",
+        delai=0.16,
     ),
     unsafe_allow_html=True,
 )
@@ -269,7 +346,7 @@ colonne_3.markdown(
 st.write("")
 
 st.download_button(
-    label="⬇ Telecharger le KPI filtre (CSV)",
+    label="Telecharger le KPI filtre (CSV)",
     data=kpi_filtre.to_csv(index=False).encode("utf-8"),
     file_name=f"kpi_{categorie_choisie}_{annee_choisie}.csv",
     mime="text/csv",
@@ -471,7 +548,12 @@ with onglet_prevision:
             couleur_ligne = couleur_selon_taux(ligne["taux_estime_pct"])
             col1, col2, col3 = st.columns(3)
             col1.markdown(
-                carte_kpi("Total estime", f"{int(ligne['total_estime']):,}".replace(",", " ")),
+                carte_kpi(
+                    "Total estime",
+                    f"{int(ligne['total_estime']):,}".replace(",", " "),
+                    icone="annuel",
+                    delai=0.00,
+                ),
                 unsafe_allow_html=True,
             )
             col2.markdown(
@@ -479,6 +561,8 @@ with onglet_prevision:
                     "Objectif annuel",
                     f"{int(ligne['objectif_annuel']):,}".replace(",", " "),
                     couleur=GRIS,
+                    icone="objectif",
+                    delai=0.08,
                 ),
                 unsafe_allow_html=True,
             )
@@ -489,6 +573,8 @@ with onglet_prevision:
                     f"proba : {ligne['probabilite_atteinte_pct']} %",
                     couleur=couleur_ligne,
                     extra_html=barres_signal(ligne["taux_estime_pct"], couleur_ligne),
+                    icone="taux",
+                    delai=0.16,
                 ),
                 unsafe_allow_html=True,
             )
