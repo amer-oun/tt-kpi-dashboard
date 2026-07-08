@@ -63,6 +63,15 @@ python anomalies.py            # anomalies (z-score)      -> data/anomalies.csv
 
 Le dashboard relit automatiquement ces fichiers (bouton **Rerun** dans le navigateur).
 
+## Tests
+
+Des tests unitaires valident automatiquement les calculs de KPI (taux de
+réalisation, protection contre la division par zéro). Pour les lancer :
+
+```bash
+pytest -v
+```
+
 ## Structure du projet
 
 ```

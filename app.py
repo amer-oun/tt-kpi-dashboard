@@ -652,6 +652,31 @@ with onglet_comparaison:
     figure_taux_comparaison.update_layout(template="plotly_white")
     st.plotly_chart(figure_taux_comparaison, use_container_width=True)
 
+    # --- Evolution pluriannuelle (a periode comparable : 1er semestre) ---
+    # 2026 est incomplet (jan-juin), donc on compare le MEME semestre chaque
+    # annee pour eviter tout biais. Montre si les ventes progressent.
+    st.subheader("Evolution des ventes du 1er semestre (janvier a juin), par annee")
+    premier_semestre = ventes[ventes["mois"].between(1, 6)]
+    evolution = (
+        premier_semestre.groupby(["annee", "categorie"])["quantite"].sum().reset_index()
+    )
+    figure_evolution = px.line(
+        evolution,
+        x="annee",
+        y="quantite",
+        color="categorie",
+        markers=True,
+        color_discrete_map={"Internet Fixe": BLEU, "Mobile": NUIT},
+        labels={"annee": "Annee", "quantite": "Ventes (jan-juin)", "categorie": "Categorie"},
+    )
+    figure_evolution.update_layout(template="plotly_white")
+    figure_evolution.update_xaxes(dtick=1)  # afficher des annees entieres
+    st.plotly_chart(figure_evolution, use_container_width=True)
+    st.caption(
+        "Comparaison a periode identique (janvier-juin) pour chaque annee, "
+        "afin d'eviter le biais du 2026 incomplet."
+    )
+
 # --- Onglet 5 : analyse regionale ---
 with onglet_regions:
     # Les objectifs n'existent pas au niveau region (comme pour les
