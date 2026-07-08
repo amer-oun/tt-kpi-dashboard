@@ -7,3 +7,6 @@ __pycache__/
 
 # Secrets Streamlit (au cas ou)
 .streamlit/secrets.toml
+
+# Guide de preparation personnel (ne pas publier)
+GUIDE_PROJET.html

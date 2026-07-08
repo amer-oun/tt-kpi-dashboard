@@ -68,6 +68,94 @@ def couleur_selon_taux(taux):
     return ROUGE
 
 
+def jauge_taux(valeur, titre):
+    """Cree une jauge (facon compteur de vitesse) pour un taux de realisation.
+    go.Indicator est le type de graphique Plotly dedie aux jauges/compteurs.
+    - l'aiguille (bar) pointe la valeur ;
+    - les 'steps' colorent le fond (rouge/orange/vert) ;
+    - le 'threshold' trace une ligne noire sur 100 % = l'objectif a atteindre.
+    """
+    figure = go.Figure(
+        go.Indicator(
+            mode="gauge+number",
+            value=valeur,
+            number={"suffix": " %"},
+            title={"text": titre, "font": {"size": 15}},
+            gauge={
+                "axis": {"range": [0, 120]},
+                "bar": {"color": couleur_selon_taux(valeur)},
+                "steps": [
+                    {"range": [0, 90], "color": "#F3D6D6"},    # zone rouge pale
+                    {"range": [90, 100], "color": "#FBE7D3"},  # zone orange pale
+                    {"range": [100, 120], "color": "#D7F0E2"}, # zone verte pale
+                ],
+                "threshold": {"line": {"color": NUIT, "width": 3}, "thickness": 0.85, "value": 100},
+            },
+        )
+    )
+    figure.update_layout(height=240, margin=dict(t=45, b=10, l=25, r=25))
+    return figure
+
+
+def texte_alerte(categorie, taux, manque):
+    """Retourne la phrase d'alerte pour une categorie (reutilisee ecran + PDF)."""
+    if taux is None:
+        return f"{categorie} : pas d'objectif defini."
+    if taux >= 100:
+        return f"{categorie} : objectif atteint ({taux} %)."
+    if taux >= 90:
+        return f"{categorie} : proche de l'objectif ({taux} %), il manque {manque} ventes."
+    return f"{categorie} : en retard ({taux} %), il manque {manque} ventes."
+
+
+def generer_rapport_pdf(categorie, annee, total_realise, total_objectif, taux_global, ecart_global, alertes):
+    """Construit un rapport PDF d'une page et le renvoie en octets (bytes).
+    On importe fpdf ICI (import 'paresseux') pour que le dashboard fonctionne
+    meme si la librairie n'est pas installee (le bouton afficherait une erreur).
+    Note : on ecrit sans accents, car la police de base du PDF gere mal l'UTF-8."""
+    from fpdf import FPDF, XPos, YPos
+    from datetime import date
+
+    pdf = FPDF()
+    pdf.add_page()
+
+    # En-tete
+    pdf.set_font("Helvetica", "B", 16)
+    pdf.set_text_color(10, 42, 74)
+    pdf.cell(0, 10, "Rapport KPI - Tunisie Telecom", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.set_font("Helvetica", "", 11)
+    pdf.set_text_color(90, 112, 134)
+    pdf.cell(0, 8, f"Categorie : {categorie}   |   Annee : {annee}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(0, 8, f"Genere le : {date.today().strftime('%d/%m/%Y')}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.ln(4)
+
+    # Chiffres cles
+    pdf.set_text_color(30, 41, 59)
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.cell(0, 9, "Chiffres cles", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.set_font("Helvetica", "", 11)
+    taux_txt = f"{taux_global} %" if taux_global is not None else "N/A"
+    for ligne_pdf in [
+        f"- Ventes realisees (cumul) : {total_realise}",
+        f"- Objectif (cumul) : {total_objectif}",
+        f"- Taux de realisation : {taux_txt}",
+        f"- Ecart : {ecart_global:+} ventes",
+    ]:
+        pdf.cell(0, 7, ligne_pdf, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.ln(4)
+
+    # Alertes par categorie
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.cell(0, 9, f"Alertes - situation cumulee {annee}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.set_font("Helvetica", "", 11)
+    for _, a in alertes.iterrows():
+        manque = int(a["objectif_mensuel"] - a["ventes_reelles"])
+        pdf.cell(0, 7, "- " + texte_alerte(a["categorie"], a["taux"], manque),
+                 new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+    return bytes(pdf.output())
+
+
 def barres_signal(taux, couleur):
     """SIGNATURE du design : un indicateur facon "reception mobile".
     5 barres de hauteur croissante ; on en allume d'autant plus que le taux
@@ -353,14 +441,64 @@ st.download_button(
 )
 
 # ============================================================================
+#  Bandeau d'alertes automatiques (toutes categories, annee selectionnee)
+# ============================================================================
+# But : rendre le dashboard "actionnable". Le responsable voit tout de suite
+# quelles categories sont en retard sur leur objectif, sans lire les chiffres.
+st.subheader(f"Alertes - situation cumulee {annee_choisie}")
+
+# On cumule ventes et objectifs de l'annee, par categorie
+alertes = (
+    kpi_annee.groupby("categorie")[["ventes_reelles", "objectif_mensuel"]]
+    .sum()
+    .reset_index()
+)
+# Taux cumule, avec protection contre la division par zero
+alertes["taux"] = alertes.apply(
+    lambda r: round(r["ventes_reelles"] / r["objectif_mensuel"] * 100, 1)
+    if r["objectif_mensuel"] else None,
+    axis=1,
+)
+
+for _, ligne_alerte in alertes.iterrows():
+    manque = int(ligne_alerte["objectif_mensuel"] - ligne_alerte["ventes_reelles"])
+    taux = ligne_alerte["taux"]
+    nom = ligne_alerte["categorie"]
+    if taux is None:
+        st.info(f"{nom} : pas d'objectif defini.")
+    elif taux >= 100:
+        # st.success = message vert (avec icone integree)
+        st.success(f"{nom} : objectif atteint a ce stade ({taux} %).")
+    elif taux >= 90:
+        # st.warning = message orange
+        st.warning(f"{nom} : proche de l'objectif ({taux} %) - il manque {manque} ventes.")
+    else:
+        # st.error = message rouge
+        st.error(f"{nom} : en retard ({taux} %) - il manque {manque} ventes.")
+
+# --- Bouton d'export du rapport PDF ---
+# On genere le PDF a la demande et on le propose au telechargement.
+rapport_pdf = generer_rapport_pdf(
+    categorie_choisie, annee_choisie, total_realise, total_objectif,
+    taux_global, ecart_global, alertes,
+)
+st.download_button(
+    label="Telecharger le rapport PDF",
+    data=rapport_pdf,
+    file_name=f"rapport_{categorie_choisie}_{annee_choisie}.pdf",
+    mime="application/pdf",
+)
+
+# ============================================================================
 #  Onglets
 # ============================================================================
-onglet_tableau, onglet_cumule, onglet_sous_categories, onglet_comparaison, onglet_prevision = st.tabs(
+onglet_tableau, onglet_cumule, onglet_sous_categories, onglet_comparaison, onglet_regions, onglet_prevision = st.tabs(
     [
         "Tableau & mensuel",
         "Suivi cumule",
         "Detail sous-categories",
         "Comparaison categories",
+        "Analyse regionale",
         "Prevision & alertes",
     ]
 )
@@ -392,6 +530,36 @@ with onglet_tableau:
     )
     figure.update_layout(template="plotly_white")
     st.plotly_chart(figure, use_container_width=True)
+
+    # --- Ventes moyennes par jour de la semaine ---
+    # On exploite ici la finesse JOURNALIERE des donnees (le reste du dashboard
+    # ne montre que du mensuel). Objectif : voir quels jours vendent le plus.
+    st.subheader(f"Ventes moyennes par jour de la semaine - {categorie_choisie} {annee_choisie}")
+
+    JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"]
+
+    ventes_cat_annee = ventes[
+        (ventes["categorie"] == categorie_choisie) & (ventes["annee"] == annee_choisie)
+    ]
+    # 1) total vendu chaque JOUR (toutes sous-categories confondues)
+    total_par_jour = ventes_cat_annee.groupby("date")["quantite"].sum().reset_index()
+    # 2) .dt.dayofweek donne le jour : 0 = lundi ... 6 = dimanche
+    total_par_jour["jour_num"] = total_par_jour["date"].dt.dayofweek
+    # 3) moyenne par jour de semaine (comparaison equitable : ~52 lundis, etc.)
+    moyenne_par_jour = total_par_jour.groupby("jour_num")["quantite"].mean().reset_index()
+    moyenne_par_jour["jour"] = moyenne_par_jour["jour_num"].map(lambda i: JOURS[i])
+    moyenne_par_jour["quantite"] = moyenne_par_jour["quantite"].round(1)
+
+    figure_jours = px.bar(
+        moyenne_par_jour,
+        x="jour",
+        y="quantite",
+        color_discrete_sequence=[BLEU],
+        category_orders={"jour": JOURS},  # garde l'ordre Lundi -> Dimanche
+        labels={"jour": "Jour", "quantite": "Ventes moyennes / jour"},
+    )
+    figure_jours.update_layout(template="plotly_white")
+    st.plotly_chart(figure_jours, use_container_width=True)
 
 # --- Onglet 2 : suivi cumule ---
 with onglet_cumule:
@@ -484,7 +652,77 @@ with onglet_comparaison:
     figure_taux_comparaison.update_layout(template="plotly_white")
     st.plotly_chart(figure_taux_comparaison, use_container_width=True)
 
-# --- Onglet 5 : prevision + probabilite d'atteinte + anomalies ---
+# --- Onglet 5 : analyse regionale ---
+with onglet_regions:
+    # Les objectifs n'existent pas au niveau region (comme pour les
+    # sous-categories) : on montre donc uniquement le realise par region.
+    ventes_region_annee = ventes[
+        (ventes["categorie"] == categorie_choisie) & (ventes["annee"] == annee_choisie)
+    ]
+
+    # --- Total des ventes par region (barres horizontales, triees) ---
+    ventes_par_region = (
+        ventes_region_annee.groupby("region")["quantite"]
+        .sum()
+        .reset_index()
+        .sort_values("quantite", ascending=True)  # la plus grande finit en haut
+    )
+
+    # Carte : region qui vend le plus
+    if len(ventes_par_region) > 0:
+        region_top = ventes_par_region.iloc[-1]
+        col_a, col_b = st.columns(2)
+        col_a.markdown(
+            carte_kpi("Region la plus performante", region_top["region"], icone="ventes"),
+            unsafe_allow_html=True,
+        )
+        col_b.markdown(
+            carte_kpi(
+                "Ventes de cette region",
+                f"{int(region_top['quantite']):,}".replace(",", " "),
+                "sur la periode",
+                couleur=GRIS,
+                icone="annuel",
+                delai=0.08,
+            ),
+            unsafe_allow_html=True,
+        )
+        st.write("")
+
+    st.subheader(f"Ventes par region - {categorie_choisie} {annee_choisie}")
+    figure_region = px.bar(
+        ventes_par_region,
+        x="quantite",
+        y="region",
+        orientation="h",
+        color_discrete_sequence=[BLEU],
+        labels={"quantite": "Ventes", "region": "Region"},
+    )
+    figure_region.update_layout(template="plotly_white")
+    st.plotly_chart(figure_region, use_container_width=True)
+
+    # --- Repartition mensuelle empilee par region ---
+    st.subheader(f"Repartition mensuelle par region - {annee_choisie}")
+    ventes_region_mois = (
+        ventes_region_annee.groupby(["mois", "region"])["quantite"].sum().reset_index()
+    )
+    figure_region_mois = px.bar(
+        ventes_region_mois,
+        x="mois",
+        y="quantite",
+        color="region",
+        barmode="stack",
+        labels={"mois": "Mois", "quantite": "Ventes", "region": "Region"},
+    )
+    figure_region_mois.update_layout(template="plotly_white")
+    st.plotly_chart(figure_region_mois, use_container_width=True)
+
+    st.caption(
+        "Note : la dimension regionale est simulee (ajoutee via ajouter_region.py) "
+        "pour demontrer la capacite d'analyse geographique."
+    )
+
+# --- Onglet 6 : prevision + probabilite d'atteinte + anomalies ---
 with onglet_prevision:
 
     # ===== A. Prevision Prophet =====
@@ -579,6 +817,11 @@ with onglet_prevision:
                 unsafe_allow_html=True,
             )
             st.write("")
+            # Jauge visuelle du taux d'atteinte annuel (compteur)
+            st.plotly_chart(
+                jauge_taux(ligne["taux_estime_pct"], f"Taux d'atteinte estime - {int(ligne['annee'])}"),
+                use_container_width=True,
+            )
             if ligne["ecart_a_combler"] > 0:
                 st.info(
                     f"Il manque environ {int(ligne['ecart_a_combler'])} ventes pour atteindre l'objectif "

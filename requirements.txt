@@ -6,3 +6,5 @@
 streamlit>=1.40
 pandas>=2.2
 plotly>=5.22
+numpy>=1.26
+fpdf2>=2.7
