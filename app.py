@@ -252,7 +252,7 @@ st.markdown(
             linear-gradient(120deg, var(--tt-nuit) 0%, #0E3A63 100%);
         border-radius: 16px; padding: 24px 30px 28px 30px; margin-bottom: 22px;
         box-shadow: 0 8px 24px rgba(10,42,74,.20);
-        animation: apparition .5s ease both;
+        animation: apparition .6s cubic-bezier(.22,1,.36,1) both;
     }}
     /* liseré bleu -> rouge en bas : clin d'oeil au drapeau tunisien */
     .tt-masthead::after {{
@@ -277,13 +277,15 @@ st.markdown(
     /* ---------- Cartes KPI (style data-dense + survol) ---------- */
     .tt-card {{
         background: var(--tt-surface); border: 1px solid var(--tt-bordure); border-radius: 14px;
-        padding: 15px 18px 16px 18px; box-shadow: 0 2px 8px rgba(10,42,74,.05);
-        animation: apparition .5s ease both;
-        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        padding: 15px 18px 16px 18px; box-shadow: 0 1px 3px rgba(10,42,74,.06);
+        animation: apparition .55s cubic-bezier(.22,1,.36,1) both;
+        transition: transform .25s cubic-bezier(.22,1,.36,1),
+                    box-shadow .25s cubic-bezier(.22,1,.36,1),
+                    border-color .25s ease;
     }}
     .tt-card:hover {{
         transform: translateY(-3px);
-        box-shadow: 0 10px 22px rgba(10,42,74,.12);
+        box-shadow: 0 8px 15px rgba(10,42,74,.10);
         border-color: #C3D4E8;
     }}
     .tt-card-entete {{ display: flex; align-items: center; justify-content: space-between; }}
