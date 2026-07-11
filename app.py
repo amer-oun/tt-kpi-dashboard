@@ -219,7 +219,9 @@ st.set_page_config(
     page_title="TT - Console de performance commerciale",
     page_icon="📡",
     layout="wide",
-    initial_sidebar_state="expanded",
+    # "auto" : barre laterale ouverte sur PC, repliee automatiquement sur telephone
+    # (sinon elle s'ouvre par-dessus le contenu au chargement mobile).
+    initial_sidebar_state="auto",
 )
 
 # ============================================================================
@@ -267,7 +269,8 @@ st.markdown(
     }}
     .tt-masthead .tt-op {{ color: #cfe4f7 !important; font-size: 13px; font-weight: 600;
              text-transform: uppercase; letter-spacing: 2.5px; }}
-    .tt-masthead .tt-title {{ color: #ffffff !important; margin: 0; font-size: 30px;
+    .tt-masthead .tt-title {{ color: #ffffff !important; margin: 0;
+             font-size: clamp(22px, 5.5vw, 30px);
              font-weight: 700; letter-spacing: -0.5px; }}
     .tt-masthead .tt-sub   {{ color: #9fc4e6 !important; margin: 6px 0 0 0; font-size: 14px;
              letter-spacing: .3px; }}
@@ -294,7 +297,7 @@ st.markdown(
                      text-transform: uppercase; letter-spacing: .8px; }}
     .tt-card-valeur {{
         color: var(--tt-nuit); font-family: var(--mono);
-        font-size: 31px; font-weight: 600; font-variant-numeric: tabular-nums;
+        font-size: clamp(26px, 6vw, 31px); font-weight: 600; font-variant-numeric: tabular-nums;
         margin-top: 6px; line-height: 1.1;
     }}
     .tt-card-sous {{ font-size: 13px; font-weight: 600; margin-top: 4px; }}
@@ -341,6 +344,39 @@ st.markdown(
         .tt-card, .sig-bar, .stTabs [data-baseweb="tab"], .stDownloadButton button {{ transition: none; }}
         .tt-card:hover {{ transform: none; }}
     }}
+
+    /* ================= ADAPTATION MOBILE / TABLETTE (responsive) =================
+       Sur petit ecran (<= 640px), on resserre les marges, on reduit le bandeau
+       et on rend les onglets plus compacts. Les cartes KPI (st.columns) s'empilent
+       deja toutes seules en vertical grace a Streamlit. */
+    @media (max-width: 640px) {{
+        .block-container {{ padding-top: .8rem; padding-left: .7rem; padding-right: .7rem; }}
+        .tt-masthead {{ padding: 18px 18px 22px 18px; border-radius: 12px; margin-bottom: 16px; }}
+        .tt-masthead .tt-op {{ letter-spacing: 1.5px; font-size: 11px; }}
+        .tt-masthead .tt-sub {{ font-size: 12.5px; }}
+        .tt-logo-img {{ height: 48px; }}
+        /* onglets plus petits : ils tiennent mieux et defilent horizontalement au besoin */
+        .stTabs [data-baseweb="tab-list"] {{ gap: 3px; padding: 4px; }}
+        .stTabs [data-baseweb="tab"] {{ padding: 7px 11px; font-size: 12.5px; }}
+    }}
+
+    /* ================= ECRANS TACTILES (telephone / tablette) =================
+       pointer: coarse = ecran controle au doigt -> cibles plus grandes (>= 44px,
+       recommandation d'accessibilite tactile). */
+    @media (pointer: coarse) {{
+        .stDownloadButton button {{ padding: 12px 20px !important; }}
+        .stTabs [data-baseweb="tab"] {{ min-height: 44px; display: flex; align-items: center; }}
+    }}
+
+    /* Sur ecran sans souris (tactile), on neutralise le survol qui "colle"
+       apres un tap (l'effet de levitation resterait bloque). */
+    @media (hover: none) {{
+        .tt-card:hover {{
+            transform: none;
+            box-shadow: 0 1px 3px rgba(10,42,74,.06);
+            border-color: var(--tt-bordure);
+        }}
+    }}
     </style>
     """,
     unsafe_allow_html=True,
@@ -369,6 +405,7 @@ objectifs = pd.read_csv("data/objectifs.csv")
 prevision = charger_si_existe("data/prevision.csv")
 atteinte = charger_si_existe("data/atteinte_objectif.csv")
 anomalies = charger_si_existe("data/anomalies.csv")
+validation = charger_si_existe("data/validation_modele.csv")
 
 # Preparation des ventes (dates + annee/mois) et calcul des KPI,
 # via le module partage kpi.py (meme logique que calcul_kpi.py).
@@ -867,3 +904,85 @@ with onglet_prevision:
         anomalies_categorie = anomalies[anomalies["categorie"] == categorie_choisie]
         st.write(f"{len(anomalies_categorie)} anomalie(s) detectee(s) pour cette categorie.")
         st.dataframe(anomalies_categorie, use_container_width=True)
+
+    # ===== D. Fiabilite du modele (validation retrospective / backtesting) =====
+    # But : PROUVER que la prevision est credible. Le modele a ete entraine
+    # uniquement sur 2024-2025 (validation_modele.py), puis on a compare ses
+    # predictions aux VRAIES ventes de jan-juin 2026 (qu'il n'avait jamais vues).
+    st.subheader(f"Fiabilite du modele - {categorie_choisie}")
+    if validation is None:
+        st.warning("Fichier data/validation_modele.csv absent. Lance d'abord : python validation_modele.py")
+    else:
+        validation_categorie = validation[validation["categorie"] == categorie_choisie].copy()
+        validation_categorie["date"] = pd.to_datetime(validation_categorie["date"])
+
+        # Indicateurs de qualite : MAE (erreur moyenne en ventes) et
+        # MAPE (erreur moyenne en %). Fiabilite = 100 - MAPE.
+        mae = validation_categorie["erreur_abs"].mean()
+        mape = validation_categorie["erreur_pct"].mean()
+        fiabilite = 100 - mape
+        couleur_fiab = couleur_selon_taux(fiabilite)
+
+        col_v1, col_v2, col_v3 = st.columns(3)
+        col_v1.markdown(
+            carte_kpi(
+                "Erreur moyenne (MAE)",
+                f"{mae:.0f}",
+                "ventes / mois",
+                couleur=GRIS,
+                icone="ventes",
+                delai=0.00,
+            ),
+            unsafe_allow_html=True,
+        )
+        col_v2.markdown(
+            carte_kpi(
+                "Erreur moyenne (MAPE)",
+                f"{mape:.1f} %",
+                "ecart moyen entre prevu et reel",
+                couleur=GRIS,
+                icone="taux",
+                delai=0.08,
+            ),
+            unsafe_allow_html=True,
+        )
+        col_v3.markdown(
+            carte_kpi(
+                "Fiabilite estimee",
+                f"{fiabilite:.1f} %",
+                "100 - MAPE",
+                couleur=couleur_fiab,
+                extra_html=barres_signal(fiabilite, couleur_fiab),
+                icone="objectif",
+                delai=0.16,
+            ),
+            unsafe_allow_html=True,
+        )
+        st.write("")
+
+        # Graphique : ventes reelles vs ventes prevues sur la periode de test
+        figure_validation = go.Figure()
+        figure_validation.add_trace(
+            go.Scatter(
+                x=validation_categorie["date"], y=validation_categorie["ventes_reelles"],
+                mode="lines+markers", line=dict(color=NUIT, width=2), name="Ventes reelles",
+            )
+        )
+        figure_validation.add_trace(
+            go.Scatter(
+                x=validation_categorie["date"], y=validation_categorie["ventes_prevues"],
+                mode="lines+markers", line=dict(color=BLEU, width=2, dash="dash"),
+                name="Ventes prevues par le modele",
+            )
+        )
+        figure_validation.update_layout(
+            template="plotly_white", xaxis_title="Mois (test : jan-juin 2026)",
+            yaxis_title="Quantite mensuelle",
+        )
+        st.plotly_chart(figure_validation, use_container_width=True)
+        st.caption(
+            "Test du modele : entraine uniquement sur 2024-2025, il predit jan-juin 2026 "
+            "sans jamais avoir vu ces mois. On compare sa prevision (bleu pointille) aux "
+            "vraies ventes (bleu nuit). Plus les deux courbes sont proches, plus le modele "
+            "est fiable."
+        )

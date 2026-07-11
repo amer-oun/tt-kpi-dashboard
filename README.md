@@ -12,7 +12,9 @@ par catégorie, l'application :
 3. visualise le tout dans un **dashboard interactif** (Streamlit) ;
 4. **prévoit** les ventes futures (Machine Learning — modèle Prophet) ;
 5. estime la **probabilité d'atteindre l'objectif annuel** ;
-6. **détecte les jours de vente anormaux** (z-score).
+6. **détecte les jours de vente anormaux** (z-score) ;
+7. **valide la fiabilité du modèle de prévision** (backtesting : entraîné sur
+   2024-2025, testé sur 2026).
 
 ## Stack technique
 
@@ -59,6 +61,7 @@ python forecast.py             # prévision Prophet        -> data/prevision.csv
 python calcul_kpi.py           # KPI mensuels             -> data/kpi_mensuel.csv
 python prediction_atteinte.py  # probabilité d'atteinte   -> data/atteinte_objectif.csv
 python anomalies.py            # anomalies (z-score)      -> data/anomalies.csv
+python validation_modele.py    # fiabilité du modèle      -> data/validation_modele.csv
 ```
 
 Le dashboard relit automatiquement ces fichiers (bouton **Rerun** dans le navigateur).
@@ -82,7 +85,8 @@ tt_kpi/
 │   ├── kpi_mensuel.csv         # généré par calcul_kpi.py
 │   ├── prevision.csv           # généré par forecast.py
 │   ├── atteinte_objectif.csv   # généré par prediction_atteinte.py
-│   └── anomalies.csv           # généré par anomalies.py
+│   ├── anomalies.csv           # généré par anomalies.py
+│   └── validation_modele.csv   # généré par validation_modele.py
 ├── assets/
 │   └── logo_tt.png             # logo affiché dans le dashboard
 ├── kpi.py                      # module partagé : calcul des KPI
@@ -91,6 +95,7 @@ tt_kpi/
 ├── forecast.py                 # prévision Prophet
 ├── prediction_atteinte.py      # probabilité d'atteinte de l'objectif annuel
 ├── anomalies.py                # détection des jours de vente anormaux
+├── validation_modele.py        # validation (backtesting) du modèle de prévision
 ├── app.py                      # dashboard Streamlit (interface)
 ├── requirements.txt            # librairies à installer
 └── README.md                   # ce fichier
