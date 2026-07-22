@@ -12,6 +12,13 @@ __pycache__/
 # Guide de preparation personnel (ne pas publier)
 GUIDE_PROJET.html
 
+# Fichier de contexte interne (ne pas publier sur GitHub)
+CLAUDE.md
+
+# Documents de redaction du rapport (personnels)
+SOMMAIRE_RAPPORT.md
+Sommaire_Rapport_PFE.docx
+
 # Skills installees localement (outils, pas du code projet)
 .agents/
 skills-lock.json
