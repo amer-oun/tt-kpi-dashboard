@@ -781,6 +781,34 @@ with onglet_regions:
     figure_region_mois.update_layout(template="plotly_white")
     st.plotly_chart(figure_region_mois, use_container_width=True)
 
+    # --- Tableau des realisations par region (une ligne = une region) ---
+    # Tableau croise : regions en lignes, mois en colonnes, + une colonne Total.
+    # Ce sont les ventes REELLEMENT realisees (les "realisations"), declinees
+    # par region comme demande.
+    st.subheader(f"Tableau des realisations par region - {categorie_choisie} {annee_choisie}")
+    tableau_realisations = ventes_region_annee.pivot_table(
+        index="region", columns="mois", values="quantite", aggfunc="sum", fill_value=0
+    )
+    tableau_realisations["Total"] = tableau_realisations.sum(axis=1)
+    tableau_realisations = tableau_realisations.sort_values("Total", ascending=False)
+    st.dataframe(tableau_realisations, use_container_width=True)
+
+    # Bouton pour telecharger ces realisations au format CSV
+    realisations_csv = (
+        ventes_region_annee.groupby(["region", "mois"])["quantite"]
+        .sum()
+        .reset_index()
+        .rename(columns={"quantite": "realisation"})
+        .to_csv(index=False)
+        .encode("utf-8")
+    )
+    st.download_button(
+        "Telecharger les realisations par region (CSV)",
+        data=realisations_csv,
+        file_name=f"realisations_{categorie_choisie}_{annee_choisie}.csv",
+        mime="text/csv",
+    )
+
     st.caption(
         "Note : la dimension regionale est simulee (ajoutee via ajouter_region.py) "
         "pour demontrer la capacite d'analyse geographique."
