@@ -1,0 +1,421 @@
+annee,mois,region,categorie,realisation
+2024,1,Bizerte,Internet Fixe,122
+2024,1,Bizerte,Mobile,213
+2024,1,Gabes,Internet Fixe,69
+2024,1,Gabes,Mobile,101
+2024,1,Grand Tunis,Internet Fixe,356
+2024,1,Grand Tunis,Mobile,424
+2024,1,Kairouan,Internet Fixe,79
+2024,1,Kairouan,Mobile,46
+2024,1,Nabeul,Internet Fixe,148
+2024,1,Nabeul,Mobile,137
+2024,1,Sfax,Internet Fixe,168
+2024,1,Sfax,Mobile,217
+2024,1,Sousse,Internet Fixe,129
+2024,1,Sousse,Mobile,233
+2024,2,Bizerte,Internet Fixe,103
+2024,2,Bizerte,Mobile,191
+2024,2,Gabes,Internet Fixe,115
+2024,2,Gabes,Mobile,104
+2024,2,Grand Tunis,Internet Fixe,383
+2024,2,Grand Tunis,Mobile,261
+2024,2,Kairouan,Internet Fixe,79
+2024,2,Kairouan,Mobile,126
+2024,2,Nabeul,Internet Fixe,96
+2024,2,Nabeul,Mobile,250
+2024,2,Sfax,Internet Fixe,99
+2024,2,Sfax,Mobile,224
+2024,2,Sousse,Internet Fixe,224
+2024,2,Sousse,Mobile,106
+2024,3,Bizerte,Internet Fixe,142
+2024,3,Bizerte,Mobile,125
+2024,3,Gabes,Internet Fixe,111
+2024,3,Gabes,Mobile,184
+2024,3,Grand Tunis,Internet Fixe,385
+2024,3,Grand Tunis,Mobile,387
+2024,3,Kairouan,Internet Fixe,56
+2024,3,Kairouan,Mobile,72
+2024,3,Nabeul,Internet Fixe,140
+2024,3,Nabeul,Mobile,207
+2024,3,Sfax,Internet Fixe,145
+2024,3,Sfax,Mobile,260
+2024,3,Sousse,Internet Fixe,167
+2024,3,Sousse,Mobile,240
+2024,4,Bizerte,Internet Fixe,97
+2024,4,Bizerte,Mobile,168
+2024,4,Gabes,Internet Fixe,133
+2024,4,Gabes,Mobile,72
+2024,4,Grand Tunis,Internet Fixe,263
+2024,4,Grand Tunis,Mobile,507
+2024,4,Kairouan,Internet Fixe,141
+2024,4,Kairouan,Mobile,65
+2024,4,Nabeul,Internet Fixe,129
+2024,4,Nabeul,Mobile,176
+2024,4,Sfax,Internet Fixe,166
+2024,4,Sfax,Mobile,209
+2024,4,Sousse,Internet Fixe,274
+2024,4,Sousse,Mobile,257
+2024,5,Bizerte,Internet Fixe,163
+2024,5,Bizerte,Mobile,146
+2024,5,Gabes,Internet Fixe,79
+2024,5,Gabes,Mobile,156
+2024,5,Grand Tunis,Internet Fixe,381
+2024,5,Grand Tunis,Mobile,492
+2024,5,Kairouan,Internet Fixe,58
+2024,5,Kairouan,Mobile,118
+2024,5,Nabeul,Internet Fixe,134
+2024,5,Nabeul,Mobile,49
+2024,5,Sfax,Internet Fixe,187
+2024,5,Sfax,Mobile,304
+2024,5,Sousse,Internet Fixe,248
+2024,5,Sousse,Mobile,253
+2024,6,Bizerte,Internet Fixe,76
+2024,6,Bizerte,Mobile,183
+2024,6,Gabes,Internet Fixe,131
+2024,6,Gabes,Mobile,100
+2024,6,Grand Tunis,Internet Fixe,317
+2024,6,Grand Tunis,Mobile,435
+2024,6,Kairouan,Internet Fixe,92
+2024,6,Kairouan,Mobile,176
+2024,6,Nabeul,Internet Fixe,89
+2024,6,Nabeul,Mobile,101
+2024,6,Sfax,Internet Fixe,232
+2024,6,Sfax,Mobile,214
+2024,6,Sousse,Internet Fixe,152
+2024,6,Sousse,Mobile,194
+2024,7,Bizerte,Internet Fixe,142
+2024,7,Bizerte,Mobile,166
+2024,7,Gabes,Internet Fixe,68
+2024,7,Gabes,Mobile,186
+2024,7,Grand Tunis,Internet Fixe,395
+2024,7,Grand Tunis,Mobile,449
+2024,7,Kairouan,Internet Fixe,56
+2024,7,Kairouan,Mobile,72
+2024,7,Nabeul,Internet Fixe,137
+2024,7,Nabeul,Mobile,137
+2024,7,Sfax,Internet Fixe,141
+2024,7,Sfax,Mobile,192
+2024,7,Sousse,Internet Fixe,224
+2024,7,Sousse,Mobile,181
+2024,8,Bizerte,Internet Fixe,73
+2024,8,Bizerte,Mobile,141
+2024,8,Gabes,Internet Fixe,91
+2024,8,Gabes,Mobile,75
+2024,8,Grand Tunis,Internet Fixe,341
+2024,8,Grand Tunis,Mobile,460
+2024,8,Kairouan,Internet Fixe,103
+2024,8,Kairouan,Mobile,129
+2024,8,Nabeul,Internet Fixe,108
+2024,8,Nabeul,Mobile,113
+2024,8,Sfax,Internet Fixe,126
+2024,8,Sfax,Mobile,248
+2024,8,Sousse,Internet Fixe,197
+2024,8,Sousse,Mobile,161
+2024,9,Bizerte,Internet Fixe,32
+2024,9,Bizerte,Mobile,128
+2024,9,Gabes,Internet Fixe,124
+2024,9,Gabes,Mobile,116
+2024,9,Grand Tunis,Internet Fixe,303
+2024,9,Grand Tunis,Mobile,263
+2024,9,Kairouan,Internet Fixe,92
+2024,9,Kairouan,Mobile,68
+2024,9,Nabeul,Internet Fixe,97
+2024,9,Nabeul,Mobile,216
+2024,9,Sfax,Internet Fixe,180
+2024,9,Sfax,Mobile,208
+2024,9,Sousse,Internet Fixe,149
+2024,9,Sousse,Mobile,217
+2024,10,Bizerte,Internet Fixe,101
+2024,10,Bizerte,Mobile,154
+2024,10,Gabes,Internet Fixe,127
+2024,10,Gabes,Mobile,92
+2024,10,Grand Tunis,Internet Fixe,220
+2024,10,Grand Tunis,Mobile,285
+2024,10,Kairouan,Internet Fixe,60
+2024,10,Kairouan,Mobile,115
+2024,10,Nabeul,Internet Fixe,143
+2024,10,Nabeul,Mobile,89
+2024,10,Sfax,Internet Fixe,119
+2024,10,Sfax,Mobile,270
+2024,10,Sousse,Internet Fixe,206
+2024,10,Sousse,Mobile,164
+2024,11,Bizerte,Internet Fixe,100
+2024,11,Bizerte,Mobile,101
+2024,11,Gabes,Internet Fixe,43
+2024,11,Gabes,Mobile,54
+2024,11,Grand Tunis,Internet Fixe,363
+2024,11,Grand Tunis,Mobile,407
+2024,11,Kairouan,Internet Fixe,82
+2024,11,Kairouan,Mobile,93
+2024,11,Nabeul,Internet Fixe,97
+2024,11,Nabeul,Mobile,207
+2024,11,Sfax,Internet Fixe,115
+2024,11,Sfax,Mobile,225
+2024,11,Sousse,Internet Fixe,167
+2024,11,Sousse,Mobile,109
+2024,12,Bizerte,Internet Fixe,78
+2024,12,Bizerte,Mobile,159
+2024,12,Gabes,Internet Fixe,87
+2024,12,Gabes,Mobile,122
+2024,12,Grand Tunis,Internet Fixe,401
+2024,12,Grand Tunis,Mobile,428
+2024,12,Kairouan,Internet Fixe,80
+2024,12,Kairouan,Mobile,124
+2024,12,Nabeul,Internet Fixe,153
+2024,12,Nabeul,Mobile,250
+2024,12,Sfax,Internet Fixe,158
+2024,12,Sfax,Mobile,213
+2024,12,Sousse,Internet Fixe,124
+2024,12,Sousse,Mobile,83
+2025,1,Bizerte,Internet Fixe,97
+2025,1,Bizerte,Mobile,120
+2025,1,Gabes,Internet Fixe,98
+2025,1,Gabes,Mobile,170
+2025,1,Grand Tunis,Internet Fixe,370
+2025,1,Grand Tunis,Mobile,380
+2025,1,Kairouan,Internet Fixe,53
+2025,1,Kairouan,Mobile,91
+2025,1,Nabeul,Internet Fixe,123
+2025,1,Nabeul,Mobile,123
+2025,1,Sfax,Internet Fixe,180
+2025,1,Sfax,Mobile,275
+2025,1,Sousse,Internet Fixe,270
+2025,1,Sousse,Mobile,316
+2025,2,Bizerte,Internet Fixe,101
+2025,2,Bizerte,Mobile,123
+2025,2,Gabes,Internet Fixe,136
+2025,2,Gabes,Mobile,113
+2025,2,Grand Tunis,Internet Fixe,378
+2025,2,Grand Tunis,Mobile,504
+2025,2,Kairouan,Internet Fixe,87
+2025,2,Kairouan,Mobile,104
+2025,2,Nabeul,Internet Fixe,102
+2025,2,Nabeul,Mobile,194
+2025,2,Sfax,Internet Fixe,178
+2025,2,Sfax,Mobile,203
+2025,2,Sousse,Internet Fixe,185
+2025,2,Sousse,Mobile,154
+2025,3,Bizerte,Internet Fixe,72
+2025,3,Bizerte,Mobile,47
+2025,3,Gabes,Internet Fixe,92
+2025,3,Gabes,Mobile,190
+2025,3,Grand Tunis,Internet Fixe,507
+2025,3,Grand Tunis,Mobile,605
+2025,3,Kairouan,Internet Fixe,89
+2025,3,Kairouan,Mobile,100
+2025,3,Nabeul,Internet Fixe,161
+2025,3,Nabeul,Mobile,180
+2025,3,Sfax,Internet Fixe,199
+2025,3,Sfax,Mobile,319
+2025,3,Sousse,Internet Fixe,249
+2025,3,Sousse,Mobile,195
+2025,4,Bizerte,Internet Fixe,105
+2025,4,Bizerte,Mobile,293
+2025,4,Gabes,Internet Fixe,102
+2025,4,Gabes,Mobile,185
+2025,4,Grand Tunis,Internet Fixe,443
+2025,4,Grand Tunis,Mobile,559
+2025,4,Kairouan,Internet Fixe,99
+2025,4,Kairouan,Mobile,71
+2025,4,Nabeul,Internet Fixe,112
+2025,4,Nabeul,Mobile,261
+2025,4,Sfax,Internet Fixe,148
+2025,4,Sfax,Mobile,115
+2025,4,Sousse,Internet Fixe,374
+2025,4,Sousse,Mobile,187
+2025,5,Bizerte,Internet Fixe,128
+2025,5,Bizerte,Mobile,111
+2025,5,Gabes,Internet Fixe,131
+2025,5,Gabes,Mobile,188
+2025,5,Grand Tunis,Internet Fixe,494
+2025,5,Grand Tunis,Mobile,397
+2025,5,Kairouan,Internet Fixe,83
+2025,5,Kairouan,Mobile,104
+2025,5,Nabeul,Internet Fixe,190
+2025,5,Nabeul,Mobile,219
+2025,5,Sfax,Internet Fixe,219
+2025,5,Sfax,Mobile,331
+2025,5,Sousse,Internet Fixe,191
+2025,5,Sousse,Mobile,343
+2025,6,Bizerte,Internet Fixe,80
+2025,6,Bizerte,Mobile,39
+2025,6,Gabes,Internet Fixe,85
+2025,6,Gabes,Mobile,200
+2025,6,Grand Tunis,Internet Fixe,268
+2025,6,Grand Tunis,Mobile,689
+2025,6,Kairouan,Internet Fixe,109
+2025,6,Kairouan,Mobile,29
+2025,6,Nabeul,Internet Fixe,210
+2025,6,Nabeul,Mobile,208
+2025,6,Sfax,Internet Fixe,358
+2025,6,Sfax,Mobile,197
+2025,6,Sousse,Internet Fixe,210
+2025,6,Sousse,Mobile,290
+2025,7,Bizerte,Internet Fixe,90
+2025,7,Bizerte,Mobile,87
+2025,7,Gabes,Internet Fixe,84
+2025,7,Gabes,Mobile,233
+2025,7,Grand Tunis,Internet Fixe,290
+2025,7,Grand Tunis,Mobile,576
+2025,7,Kairouan,Internet Fixe,78
+2025,7,Kairouan,Mobile,84
+2025,7,Nabeul,Internet Fixe,160
+2025,7,Nabeul,Mobile,231
+2025,7,Sfax,Internet Fixe,291
+2025,7,Sfax,Mobile,193
+2025,7,Sousse,Internet Fixe,273
+2025,7,Sousse,Mobile,238
+2025,8,Bizerte,Internet Fixe,130
+2025,8,Bizerte,Mobile,142
+2025,8,Gabes,Internet Fixe,46
+2025,8,Gabes,Mobile,100
+2025,8,Grand Tunis,Internet Fixe,360
+2025,8,Grand Tunis,Mobile,510
+2025,8,Kairouan,Internet Fixe,94
+2025,8,Kairouan,Mobile,133
+2025,8,Nabeul,Internet Fixe,146
+2025,8,Nabeul,Mobile,147
+2025,8,Sfax,Internet Fixe,231
+2025,8,Sfax,Mobile,188
+2025,8,Sousse,Internet Fixe,104
+2025,8,Sousse,Mobile,153
+2025,9,Bizerte,Internet Fixe,59
+2025,9,Bizerte,Mobile,121
+2025,9,Gabes,Internet Fixe,184
+2025,9,Gabes,Mobile,98
+2025,9,Grand Tunis,Internet Fixe,278
+2025,9,Grand Tunis,Mobile,531
+2025,9,Kairouan,Internet Fixe,85
+2025,9,Kairouan,Mobile,80
+2025,9,Nabeul,Internet Fixe,94
+2025,9,Nabeul,Mobile,219
+2025,9,Sfax,Internet Fixe,237
+2025,9,Sfax,Mobile,183
+2025,9,Sousse,Internet Fixe,128
+2025,9,Sousse,Mobile,135
+2025,10,Bizerte,Internet Fixe,180
+2025,10,Bizerte,Mobile,164
+2025,10,Gabes,Internet Fixe,76
+2025,10,Gabes,Mobile,92
+2025,10,Grand Tunis,Internet Fixe,379
+2025,10,Grand Tunis,Mobile,383
+2025,10,Kairouan,Internet Fixe,48
+2025,10,Kairouan,Mobile,119
+2025,10,Nabeul,Internet Fixe,100
+2025,10,Nabeul,Mobile,216
+2025,10,Sfax,Internet Fixe,152
+2025,10,Sfax,Mobile,163
+2025,10,Sousse,Internet Fixe,198
+2025,10,Sousse,Mobile,233
+2025,11,Bizerte,Internet Fixe,62
+2025,11,Bizerte,Mobile,80
+2025,11,Gabes,Internet Fixe,70
+2025,11,Gabes,Mobile,91
+2025,11,Grand Tunis,Internet Fixe,363
+2025,11,Grand Tunis,Mobile,652
+2025,11,Kairouan,Internet Fixe,54
+2025,11,Kairouan,Mobile,36
+2025,11,Nabeul,Internet Fixe,192
+2025,11,Nabeul,Mobile,126
+2025,11,Sfax,Internet Fixe,252
+2025,11,Sfax,Mobile,198
+2025,11,Sousse,Internet Fixe,104
+2025,11,Sousse,Mobile,152
+2025,12,Bizerte,Internet Fixe,135
+2025,12,Bizerte,Mobile,162
+2025,12,Gabes,Internet Fixe,153
+2025,12,Gabes,Mobile,217
+2025,12,Grand Tunis,Internet Fixe,335
+2025,12,Grand Tunis,Mobile,406
+2025,12,Kairouan,Internet Fixe,52
+2025,12,Kairouan,Mobile,111
+2025,12,Nabeul,Internet Fixe,148
+2025,12,Nabeul,Mobile,195
+2025,12,Sfax,Internet Fixe,175
+2025,12,Sfax,Mobile,184
+2025,12,Sousse,Internet Fixe,222
+2025,12,Sousse,Mobile,243
+2026,1,Bizerte,Internet Fixe,171
+2026,1,Bizerte,Mobile,123
+2026,1,Gabes,Internet Fixe,130
+2026,1,Gabes,Mobile,140
+2026,1,Grand Tunis,Internet Fixe,381
+2026,1,Grand Tunis,Mobile,372
+2026,1,Kairouan,Internet Fixe,57
+2026,1,Kairouan,Mobile,198
+2026,1,Nabeul,Internet Fixe,204
+2026,1,Nabeul,Mobile,210
+2026,1,Sfax,Internet Fixe,187
+2026,1,Sfax,Mobile,355
+2026,1,Sousse,Internet Fixe,237
+2026,1,Sousse,Mobile,178
+2026,2,Bizerte,Internet Fixe,101
+2026,2,Bizerte,Mobile,207
+2026,2,Gabes,Internet Fixe,69
+2026,2,Gabes,Mobile,97
+2026,2,Grand Tunis,Internet Fixe,347
+2026,2,Grand Tunis,Mobile,432
+2026,2,Kairouan,Internet Fixe,152
+2026,2,Kairouan,Mobile,73
+2026,2,Nabeul,Internet Fixe,229
+2026,2,Nabeul,Mobile,132
+2026,2,Sfax,Internet Fixe,227
+2026,2,Sfax,Mobile,345
+2026,2,Sousse,Internet Fixe,196
+2026,2,Sousse,Mobile,277
+2026,3,Bizerte,Internet Fixe,196
+2026,3,Bizerte,Mobile,121
+2026,3,Gabes,Internet Fixe,112
+2026,3,Gabes,Mobile,174
+2026,3,Grand Tunis,Internet Fixe,454
+2026,3,Grand Tunis,Mobile,467
+2026,3,Kairouan,Internet Fixe,94
+2026,3,Kairouan,Mobile,142
+2026,3,Nabeul,Internet Fixe,144
+2026,3,Nabeul,Mobile,312
+2026,3,Sfax,Internet Fixe,280
+2026,3,Sfax,Mobile,377
+2026,3,Sousse,Internet Fixe,190
+2026,3,Sousse,Mobile,237
+2026,4,Bizerte,Internet Fixe,162
+2026,4,Bizerte,Mobile,182
+2026,4,Gabes,Internet Fixe,153
+2026,4,Gabes,Mobile,268
+2026,4,Grand Tunis,Internet Fixe,571
+2026,4,Grand Tunis,Mobile,493
+2026,4,Kairouan,Internet Fixe,140
+2026,4,Kairouan,Mobile,70
+2026,4,Nabeul,Internet Fixe,84
+2026,4,Nabeul,Mobile,186
+2026,4,Sfax,Internet Fixe,123
+2026,4,Sfax,Mobile,334
+2026,4,Sousse,Internet Fixe,262
+2026,4,Sousse,Mobile,367
+2026,5,Bizerte,Internet Fixe,147
+2026,5,Bizerte,Mobile,98
+2026,5,Gabes,Internet Fixe,115
+2026,5,Gabes,Mobile,98
+2026,5,Grand Tunis,Internet Fixe,477
+2026,5,Grand Tunis,Mobile,568
+2026,5,Kairouan,Internet Fixe,133
+2026,5,Kairouan,Mobile,107
+2026,5,Nabeul,Internet Fixe,230
+2026,5,Nabeul,Mobile,202
+2026,5,Sfax,Internet Fixe,202
+2026,5,Sfax,Mobile,416
+2026,5,Sousse,Internet Fixe,155
+2026,5,Sousse,Mobile,336
+2026,6,Bizerte,Internet Fixe,114
+2026,6,Bizerte,Mobile,111
+2026,6,Gabes,Internet Fixe,127
+2026,6,Gabes,Mobile,108
+2026,6,Grand Tunis,Internet Fixe,473
+2026,6,Grand Tunis,Mobile,375
+2026,6,Kairouan,Internet Fixe,169
+2026,6,Kairouan,Mobile,164
+2026,6,Nabeul,Internet Fixe,175
+2026,6,Nabeul,Mobile,171
+2026,6,Sfax,Internet Fixe,229
+2026,6,Sfax,Mobile,417
+2026,6,Sousse,Internet Fixe,180
+2026,6,Sousse,Mobile,313
