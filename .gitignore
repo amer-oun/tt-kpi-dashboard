@@ -19,6 +19,25 @@ CLAUDE.md
 SOMMAIRE_RAPPORT.md
 Sommaire_Rapport_PFE.docx
 Rapport_PFE.docx
+Rapport_PFE.tex
+Rapport_PFE_relecture.docx
+Rapport_PFE.lol
+generer_figures.py
+
+# Figures et logos du rapport (personnels, non utilises par l'app)
+assets/figures/
+assets/logo_lasalle.jpg
+assets/logo_ministere.png
+
+# Fichiers generes par LaTeX (rapport)
+Rapport_PFE.pdf
+Rapport_PFE.aux
+Rapport_PFE.log
+Rapport_PFE.toc
+Rapport_PFE.lof
+Rapport_PFE.lot
+Rapport_PFE.out
+Rapport_PFE.synctex.gz
 
 # Skills installees localement (outils, pas du code projet)
 .agents/

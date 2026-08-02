@@ -30,6 +30,41 @@ def charger_si_existe(chemin):
     return None
 
 
+# Colonnes que DOIT contenir un fichier de realisations importe (meme format
+# que data/ventes.csv). On s'en sert pour valider ce que l'utilisateur depose.
+COLONNES_ATTENDUES = ["date", "categorie", "sous_categorie", "quantite", "region"]
+
+
+def lire_fichier_importe(fichier):
+    """Lit le fichier depose par l'utilisateur (Excel .xlsx ou CSV) et renvoie
+    un DataFrame pandas. On choisit le bon lecteur selon l'extension du nom."""
+    nom = fichier.name.lower()
+    if nom.endswith(".csv"):
+        return pd.read_csv(fichier)
+    # .xlsx / .xls : necessite la librairie openpyxl (deja installee)
+    return pd.read_excel(fichier)
+
+
+def valider_ventes(df):
+    """Verifie qu'un fichier importe est utilisable.
+
+    Renvoie (True, message) si tout va bien, sinon (False, message d'erreur).
+    On controle la presence des colonnes obligatoires et le fait que la
+    colonne 'quantite' contienne bien des nombres.
+    """
+    colonnes_manquantes = [c for c in COLONNES_ATTENDUES if c not in df.columns]
+    if colonnes_manquantes:
+        return False, "Colonnes manquantes : " + ", ".join(colonnes_manquantes)
+    # 'quantite' doit etre convertible en nombre
+    try:
+        pd.to_numeric(df["quantite"])
+    except (ValueError, TypeError):
+        return False, "La colonne 'quantite' doit contenir uniquement des nombres."
+    if len(df) == 0:
+        return False, "Le fichier est vide (aucune ligne de vente)."
+    return True, f"Fichier valide : {len(df)} lignes de ventes lues."
+
+
 def logo_html():
     """Renvoie le logo a afficher dans l'en-tete.
     Si un fichier image existe dans assets/, on l'integre directement dans la
@@ -399,7 +434,19 @@ st.markdown(
 # ============================================================================
 #  Chargement et calcul des KPI (meme logique que calcul_kpi.py)
 # ============================================================================
-ventes = pd.read_csv("data/ventes.csv")
+# Source des ventes : soit un fichier importe par l'utilisateur (mode reel),
+# soit le fichier de demonstration (mode demo). Quand on depose un fichier dans
+# l'onglet "Saisie / Import", il est memorise dans st.session_state ; a chaque
+# reexecution du script, Streamlit repasse ici et utilise ces donnees a la place.
+if "ventes_importees" in st.session_state:
+    ventes = st.session_state["ventes_importees"]
+    source_donnees = st.session_state.get("nom_fichier", "fichier importe")
+    mode_reel = True
+else:
+    ventes = pd.read_csv("data/ventes.csv")
+    source_donnees = "donnees de demonstration (data/ventes.csv)"
+    mode_reel = False
+
 objectifs = pd.read_csv("data/objectifs.csv")
 
 prevision = charger_si_existe("data/prevision.csv")
@@ -531,8 +578,9 @@ st.download_button(
 # ============================================================================
 #  Onglets
 # ============================================================================
-onglet_tableau, onglet_cumule, onglet_sous_categories, onglet_comparaison, onglet_regions, onglet_prevision = st.tabs(
+onglet_import, onglet_tableau, onglet_cumule, onglet_sous_categories, onglet_comparaison, onglet_regions, onglet_prevision = st.tabs(
     [
+        "Saisie / Import",
         "Tableau & mensuel",
         "Suivi cumule",
         "Detail sous-categories",
@@ -541,6 +589,87 @@ onglet_tableau, onglet_cumule, onglet_sous_categories, onglet_comparaison, ongle
         "Prevision & alertes",
     ]
 )
+
+# --- Onglet 0 : interface d'entree (import du fichier mensuel de realisations) ---
+with onglet_import:
+    st.subheader("Import des realisations du mois")
+    st.write(
+        "Chaque mois, deposez ici le fichier des ventes reelles (Excel .xlsx ou "
+        "CSV). Les KPI seront recalcules automatiquement a partir de ce fichier."
+    )
+
+    # Indicateur de la source actuellement utilisee par le tableau de bord
+    if mode_reel:
+        st.success(f"Source active : **{source_donnees}** (fichier importe).")
+    else:
+        st.info(f"Source active : **{source_donnees}**. Aucun fichier importe pour l'instant.")
+
+    # Rappel du format attendu + modele telechargeable (extrait des donnees demo)
+    st.markdown(
+        "**Format attendu** (une ligne par vente) : "
+        + ", ".join(f"`{c}`" for c in COLONNES_ATTENDUES)
+    )
+    modele = pd.DataFrame(
+        {
+            "date": ["2026-07-01", "2026-07-01"],
+            "categorie": ["Internet Fixe", "Mobile"],
+            "sous_categorie": ["ADSL", "Data"],
+            "quantite": [6, 12],
+            "region": ["Sfax", "Grand Tunis"],
+        }
+    )
+    st.download_button(
+        "Telecharger un modele vierge (CSV)",
+        data=modele.to_csv(index=False).encode("utf-8"),
+        file_name="modele_realisations.csv",
+        mime="text/csv",
+    )
+
+    st.divider()
+
+    # Le bouton d'import proprement dit.
+    # On lui donne une "cle" (key) dont le numero peut changer : en incrementant
+    # ce numero (bouton "Revenir aux donnees de demo"), Streamlit recree un bouton
+    # VIDE, ce qui evite que l'ancien fichier soit reimporte aussitot apres.
+    if "uploader_key" not in st.session_state:
+        st.session_state["uploader_key"] = 0
+    fichier = st.file_uploader(
+        "Deposer le fichier des realisations",
+        type=["xlsx", "xls", "csv"],
+        key=f"upload_{st.session_state['uploader_key']}",
+    )
+
+    if fichier is not None:
+        try:
+            df_importe = lire_fichier_importe(fichier)
+        except Exception as erreur:  # fichier illisible / corrompu
+            st.error(f"Impossible de lire le fichier : {erreur}")
+        else:
+            valide, message = valider_ventes(df_importe)
+            if not valide:
+                st.error(message)
+            else:
+                st.success(message)
+                st.caption("Apercu des premieres lignes du fichier importe :")
+                st.dataframe(df_importe.head(), use_container_width=True)
+                # On memorise et on recharge le tableau de bord avec ces donnees.
+                # Le test sur le nom evite une boucle de reexecution infinie :
+                # une fois le fichier pris en compte, on ne relance plus.
+                if st.session_state.get("nom_fichier") != fichier.name:
+                    st.session_state["ventes_importees"] = df_importe
+                    st.session_state["nom_fichier"] = fichier.name
+                    st.rerun()
+
+    # Bouton pour revenir aux donnees de demonstration
+    if mode_reel:
+        st.divider()
+        if st.button("Revenir aux donnees de demonstration"):
+            st.session_state.pop("ventes_importees", None)
+            st.session_state.pop("nom_fichier", None)
+            # On change la cle du bouton d'upload -> il se vide vraiment,
+            # sinon l'ancien fichier serait reimporte immediatement.
+            st.session_state["uploader_key"] += 1
+            st.rerun()
 
 # --- Onglet 1 : tableau KPI + histogramme mensuel ---
 with onglet_tableau:
