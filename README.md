@@ -4,17 +4,27 @@ Application de **calcul, suivi et prévision** des indicateurs de performance
 (KPI) de vente, réalisée dans le cadre d'un **Projet de Fin d'Études** (Licence
 Appliquée) chez Tunisie Télécom.
 
+> 🔗 **Application en ligne :** _<!-- coller ici l'URL Streamlit une fois déployée, ex. https://tt-kpi-dashboard.streamlit.app -->_
+
 À partir des ventes journalières par sous-catégorie et des objectifs mensuels
 par catégorie, l'application :
 
-1. calcule le **cumul mensuel** des ventes et le **taux de réalisation** vs objectif ;
-2. suit le **cumul annuel** (réalisé cumulé vs objectif cumulé) ;
-3. visualise le tout dans un **dashboard interactif** (Streamlit) ;
-4. **prévoit** les ventes futures (Machine Learning — modèle Prophet) ;
-5. estime la **probabilité d'atteindre l'objectif annuel** ;
-6. **détecte les jours de vente anormaux** (z-score) ;
-7. **valide la fiabilité du modèle de prévision** (backtesting : entraîné sur
+1. permet la **saisie / import mensuel** des réalisations (fichier Excel ou CSV)
+   avec **recalcul automatique** des KPI ;
+2. calcule le **cumul mensuel** des ventes et le **taux de réalisation** vs objectif ;
+3. suit le **cumul annuel** (réalisé cumulé vs objectif cumulé) ;
+4. visualise le tout dans un **dashboard interactif** (Streamlit) ;
+5. **prévoit** les ventes futures (Machine Learning — modèle Prophet) ;
+6. estime la **probabilité d'atteindre l'objectif annuel** ;
+7. **détecte les jours de vente anormaux** (z-score) ;
+8. analyse les réalisations par **région** ;
+9. **valide la fiabilité du modèle de prévision** (backtesting : entraîné sur
    2024-2025, testé sur 2026).
+
+Le dashboard s'organise en **7 onglets** : le premier (**Saisie / Import**) sert
+à charger chaque mois le fichier de réalisations ; les six suivants présentent
+les différentes analyses (tableau mensuel, suivi cumulé, sous-catégories,
+comparaison des catégories, prévision & alertes, analyse régionale).
 
 ## Stack technique
 
@@ -105,9 +115,12 @@ tt_kpi/
 
 **`data/ventes.csv`** — une ligne = ventes d'une sous-catégorie un jour donné :
 
-| date | categorie | sous_categorie | quantite |
-|------|-----------|----------------|----------|
-| 2026-01-01 | Internet Fixe | Rapido | 6 |
+| date | categorie | sous_categorie | quantite | region |
+|------|-----------|----------------|----------|--------|
+| 2026-01-01 | Internet Fixe | Rapido | 6 | Grand Tunis |
+
+> C'est exactement le format attendu par l'onglet **Saisie / Import** : un
+> modèle vierge est téléchargeable directement depuis le dashboard.
 
 **`data/objectifs.csv`** — un objectif mensuel par catégorie :
 
