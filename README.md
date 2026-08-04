@@ -4,7 +4,7 @@ Application de **calcul, suivi et prévision** des indicateurs de performance
 (KPI) de vente, réalisée dans le cadre d'un **Projet de Fin d'Études** (Licence
 Appliquée) chez Tunisie Télécom.
 
-> 🔗 **Application en ligne :** _<!-- coller ici l'URL Streamlit une fois déployée, ex. https://tt-kpi-dashboard.streamlit.app -->_
+> 🔗 **Application en ligne :** https://tt-kpi-dashboard-bk6wgnynlifm4opdpbcbrb.streamlit.app/
 
 À partir des ventes journalières par sous-catégorie et des objectifs mensuels
 par catégorie, l'application :
