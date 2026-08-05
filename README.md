@@ -1,8 +1,9 @@
-# KPI de vente — Tunisie Télécom
+# KPIlot — Suivi et prévision des KPI de vente (Tunisie Télécom)
 
-Application de **calcul, suivi et prévision** des indicateurs de performance
-(KPI) de vente, réalisée dans le cadre d'un **Projet de Fin d'Études** (Licence
-Appliquée) chez Tunisie Télécom.
+**KPIlot** est une application de **calcul, suivi et prévision** des indicateurs
+de performance (KPI) de vente, réalisée dans le cadre d'un **Projet de Fin de
+Formation** (BTP, Collège LaSalle) chez Tunisie Télécom. *« Piloter les ventes
+par la donnée. »*
 
 > 🔗 **Application en ligne :** https://tt-kpi-dashboard-bk6wgnynlifm4opdpbcbrb.streamlit.app/
 

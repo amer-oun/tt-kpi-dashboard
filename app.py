@@ -251,7 +251,7 @@ def carte_kpi(titre, valeur, sous_texte="", couleur=BLEU, extra_html="", icone="
 #  Configuration de la page (DOIT etre la 1re commande Streamlit)
 # ============================================================================
 st.set_page_config(
-    page_title="TT - Console de performance commerciale",
+    page_title="KPIlot - Performance commerciale TT",
     page_icon="📡",
     layout="wide",
     # "auto" : barre laterale ouverte sur PC, repliee automatiquement sur telephone
@@ -424,8 +424,8 @@ st.markdown(
         <div class="tt-brand">
             {logo_html()}
         </div>
-        <h1 class="tt-title">Console de performance commerciale</h1>
-        <p class="tt-sub">Suivi des ventes, prevision et alertes &middot; objectifs mensuels et annuels</p>
+        <h1 class="tt-title">KPIlot</h1>
+        <p class="tt-sub">Piloter les ventes par la donnee &middot; suivi, prevision et alertes &middot; Tunisie Telecom</p>
     </div>
     """,
     unsafe_allow_html=True,
