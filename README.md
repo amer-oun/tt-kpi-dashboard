@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo_kpilot.png" alt="KPIlot" width="380">
+</p>
+
 # KPIlot — Suivi et prévision des KPI de vente (Tunisie Télécom)
 
 **KPIlot** est une application de **calcul, suivi et prévision** des indicateurs

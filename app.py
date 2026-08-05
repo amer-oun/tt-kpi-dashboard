@@ -92,6 +92,19 @@ def logo_html():
     return '<div class="tt-mark">TT</div>'
 
 
+def image_data_uri(chemin):
+    """Encode une image locale en URL 'data:' (base64) -> integrable dans le HTML
+    sans dependance externe. Sert notamment au logo KPIlot dans l'en-tete."""
+    extension = chemin.rsplit(".", 1)[-1].lower()
+    type_mime = {
+        "png": "image/png", "svg": "image/svg+xml",
+        "jpg": "image/jpeg", "jpeg": "image/jpeg",
+    }.get(extension, "image/png")
+    with open(chemin, "rb") as fichier:
+        encode = base64.b64encode(fichier.read()).decode()
+    return f"data:{type_mime};base64,{encode}"
+
+
 def couleur_selon_taux(taux):
     """Vert si objectif atteint, orange si on s'en approche, rouge sinon."""
     if taux is None:
@@ -250,9 +263,16 @@ def carte_kpi(titre, valeur, sous_texte="", couleur=BLEU, extra_html="", icone="
 # ============================================================================
 #  Configuration de la page (DOIT etre la 1re commande Streamlit)
 # ============================================================================
+# Favicon de l'onglet : l'icone KPIlot si elle existe, sinon un emoji de repli.
+try:
+    from PIL import Image
+    _favicon = Image.open("assets/logo_kpilot_icon.png")
+except Exception:
+    _favicon = "📈"
+
 st.set_page_config(
     page_title="KPIlot - Performance commerciale TT",
-    page_icon="📡",
+    page_icon=_favicon,
     layout="wide",
     # "auto" : barre laterale ouverte sur PC, repliee automatiquement sur telephone
     # (sinon elle s'ouvre par-dessus le contenu au chargement mobile).
@@ -309,8 +329,11 @@ st.markdown(
              font-weight: 700; letter-spacing: -0.5px; }}
     .tt-masthead .tt-sub   {{ color: #9fc4e6 !important; margin: 6px 0 0 0; font-size: 14px;
              letter-spacing: .3px; }}
-    .tt-logo-img {{ height: 62px; width: auto; background: #fff; padding: 8px 12px;
-             border-radius: 12px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,.12); }}
+    .tt-logo-img {{ height: 48px; width: auto; background: #fff; padding: 7px 10px;
+             border-radius: 10px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,.12); }}
+    /* Logo KPIlot (version blanche) pose directement sur le bandeau fonce */
+    .kpilot-logo {{ height: 52px; width: auto; display: block; }}
+    .tt-brand .tt-op-sep {{ width: 1px; height: 34px; background: rgba(255,255,255,.22); }}
 
     /* ---------- Cartes KPI (style data-dense + survol) ---------- */
     .tt-card {{
@@ -389,7 +412,8 @@ st.markdown(
         .tt-masthead {{ padding: 18px 18px 22px 18px; border-radius: 12px; margin-bottom: 16px; }}
         .tt-masthead .tt-op {{ letter-spacing: 1.5px; font-size: 11px; }}
         .tt-masthead .tt-sub {{ font-size: 12.5px; }}
-        .tt-logo-img {{ height: 48px; }}
+        .tt-logo-img {{ height: 40px; }}
+        .kpilot-logo {{ height: 42px; }}
         /* onglets plus petits : ils tiennent mieux et defilent horizontalement au besoin */
         .stTabs [data-baseweb="tab-list"] {{ gap: 3px; padding: 4px; }}
         .stTabs [data-baseweb="tab"] {{ padding: 7px 11px; font-size: 12.5px; }}
@@ -418,13 +442,24 @@ st.markdown(
 )
 
 # ---- Bandeau d'en-tete ----
+# Marque KPIlot (version blanche posee sur le bandeau fonce) ; repli sur le titre
+# texte si l'image n'est pas encore disponible.
+if os.path.exists("assets/logo_kpilot_blanc.png"):
+    marque_kpilot = (
+        f'<img class="kpilot-logo" src="{image_data_uri("assets/logo_kpilot_blanc.png")}" '
+        f'alt="KPIlot"/>'
+    )
+else:
+    marque_kpilot = '<h1 class="tt-title">KPIlot</h1>'
+
 st.markdown(
     f"""
     <div class="tt-masthead">
         <div class="tt-brand">
+            {marque_kpilot}
+            <span class="tt-op-sep"></span>
             {logo_html()}
         </div>
-        <h1 class="tt-title">KPIlot</h1>
         <p class="tt-sub">Piloter les ventes par la donnee &middot; suivi, prevision et alertes &middot; Tunisie Telecom</p>
     </div>
     """,
