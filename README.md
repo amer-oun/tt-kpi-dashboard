@@ -1,142 +1,78 @@
-<p align="center">
-  <img src="assets/logo_kpilot.png" alt="KPIlot" width="380">
-</p>
+# TT KPI Dashboard
 
-# KPIlot — Suivi et prévision des KPI de vente (Tunisie Télécom)
+> Sales performance dashboard for a Tunisian telecom operator — with time-series forecasting and anomaly detection. Built as a final-year project (PFE).
 
-**KPIlot** est une application de **calcul, suivi et prévision** des indicateurs
-de performance (KPI) de vente, réalisée dans le cadre d'un **Projet de Fin de
-Formation** (BTP, Collège LaSalle) chez Tunisie Télécom. *« Piloter les ventes
-par la donnée. »*
+**🔗 Live demo:** [tt-kpi-dashboard.streamlit.app](https://tt-kpi-dashboard-bk6wgnynlifm4opdpbcbrb.streamlit.app/)
 
-> 🔗 **Application en ligne :** https://tt-kpi-dashboard-bk6wgnynlifm4opdpbcbrb.streamlit.app/
+<TODO: Add a screenshot of the main dashboard at the top — the visual pull is huge for a Streamlit app. Take one from the live demo. >
 
-À partir des ventes journalières par sous-catégorie et des objectifs mensuels
-par catégorie, l'application :
+---
 
-1. permet la **saisie / import mensuel** des réalisations (fichier Excel ou CSV)
-   avec **recalcul automatique** des KPI ;
-2. calcule le **cumul mensuel** des ventes et le **taux de réalisation** vs objectif ;
-3. suit le **cumul annuel** (réalisé cumulé vs objectif cumulé) ;
-4. visualise le tout dans un **dashboard interactif** (Streamlit) ;
-5. **prévoit** les ventes futures (Machine Learning — modèle Prophet) ;
-6. estime la **probabilité d'atteindre l'objectif annuel** ;
-7. **détecte les jours de vente anormaux** (z-score) ;
-8. analyse les réalisations par **région** ;
-9. **valide la fiabilité du modèle de prévision** (backtesting : entraîné sur
-   2024-2025, testé sur 2026).
+## What it does
 
-Le dashboard s'organise en **7 onglets** : le premier (**Saisie / Import**) sert
-à charger chaque mois le fichier de réalisations ; les six suivants présentent
-les différentes analyses (tableau mensuel, suivi cumulé, sous-catégories,
-comparaison des catégories, prévision & alertes, analyse régionale).
+An interactive Streamlit dashboard that tracks sales performance across telecom product categories, projects future performance with a Prophet time-series model, and flags abnormal sales days.
 
-## Stack technique
+## Features
 
-- **Python 3.14** (environnement virtuel `venv`)
-- **pandas / numpy** — manipulation des données
-- **Plotly** — graphiques interactifs
-- **Streamlit** — dashboard web
-- **Prophet** — prévision de séries temporelles
-- **scipy** — calcul de probabilité (loi normale)
+- 📈 **Monthly cumulative sales** per product category
+- 🎯 **Target achievement rate** (taux de réalisation — actual vs monthly objective, in %)
+- 📊 **Annual cumulative tracking** — running total vs cumulative annual objective
+- 🔮 **Sales forecasting** with Facebook Prophet
+- 🎲 **Probability of reaching the annual target** (based on forecast + variance)
+- 🚨 **Anomaly detection** — flags abnormal sales days using z-score
+- 🗺 **Regional analysis** — sales broken down by region and agency
 
-## Installation
+## Product categories tracked
+
+- **Internet Fixe** — Rapido, ADSL, VDSL, FO, WAFI, Box
+- **Mobile** — Prépayé, Postpayé, Data
+
+## Tech stack
+
+| Layer | Tech |
+|---|---|
+| Framework | Streamlit |
+| Language | Python 3 |
+| Forecasting | Prophet (Facebook / Meta) |
+| Analysis | pandas · NumPy · scikit-learn |
+| Visualization | Plotly / Altair |
+| Deployment | Streamlit Community Cloud (auto-deploy from `master`) |
+
+## Data
+
+**Synthetic / simulated data** — no confidential Tunisie Télécom figures are used.
+
+The data model mirrors the real reporting structure of the **INT (Instance Nationale des Télécommunications)**, but all figures are simulated for demonstration purposes. The dataset covers 2024, 2025, and January–June 2026 — later months are what the ML module forecasts.
+
+## Getting started
+
+### Try it online
+
+Just open the live app: [tt-kpi-dashboard.streamlit.app](https://tt-kpi-dashboard-bk6wgnynlifm4opdpbcbrb.streamlit.app/)
+
+### Run locally
 
 ```bash
-# 1. Créer et activer l'environnement virtuel (Windows)
-python -m venv venv
-venv\Scripts\activate
-
-# 2a. Installer les librairies du dashboard
+git clone https://github.com/amer-oun/tt-kpi-dashboard
+cd tt-kpi-dashboard
 pip install -r requirements.txt
-
-# 2b. (optionnel) Pour régénérer les prévisions et probabilités : ajouter Prophet/scipy
-pip install -r requirements-dev.txt
-```
-
-> Le dashboard (`app.py`) ne lit que des fichiers CSV : il n'a besoin que de
-> `requirements.txt`. Prophet et scipy (dans `requirements-dev.txt`) ne servent
-> qu'aux scripts `forecast.py` et `prediction_atteinte.py`.
-
-## Utilisation
-
-### Lancer le dashboard (interface principale)
-
-```bash
 streamlit run app.py
 ```
 
-### Régénérer les données de calcul (après modification des CSV sources)
+Open http://localhost:8501
 
-Les scripts s'exécutent **dans cet ordre** (chacun produit un fichier que le
-suivant peut utiliser) :
+## Screenshots
 
-```bash
-python forecast.py             # prévision Prophet        -> data/prevision.csv
-python calcul_kpi.py           # KPI mensuels             -> data/kpi_mensuel.csv
-python prediction_atteinte.py  # probabilité d'atteinte   -> data/atteinte_objectif.csv
-python anomalies.py            # anomalies (z-score)      -> data/anomalies.csv
-python validation_modele.py    # fiabilité du modèle      -> data/validation_modele.csv
-```
+<TODO: add 3-4 screenshots from the live app — one of the main KPI view, one of the forecast, one of the anomaly detection, one of the regional breakdown >
 
-Le dashboard relit automatiquement ces fichiers (bouton **Rerun** dans le navigateur).
+## Project context
 
-## Tests
+Built as a **PFE (Projet de Fin d'Études)** at Collège LaSalle Tunis, 2026. Data is entirely synthetic; the structure follows public INT reporting conventions.
 
-Des tests unitaires valident automatiquement les calculs de KPI (taux de
-réalisation, protection contre la division par zéro). Pour les lancer :
+## License
 
-```bash
-pytest -v
-```
+MIT — see [LICENSE](./LICENSE).
 
-## Structure du projet
+## Author
 
-```
-tt_kpi/
-├── data/
-│   ├── ventes.csv              # ventes journalières (source)
-│   ├── objectifs.csv           # objectifs mensuels par catégorie (source)
-│   ├── kpi_mensuel.csv         # généré par calcul_kpi.py
-│   ├── prevision.csv           # généré par forecast.py
-│   ├── atteinte_objectif.csv   # généré par prediction_atteinte.py
-│   ├── anomalies.csv           # généré par anomalies.py
-│   └── validation_modele.csv   # généré par validation_modele.py
-├── assets/
-│   └── logo_tt.png             # logo affiché dans le dashboard
-├── kpi.py                      # module partagé : calcul des KPI
-├── decouverte.py               # aperçu des données
-├── calcul_kpi.py               # calcul des KPI mensuels
-├── forecast.py                 # prévision Prophet
-├── prediction_atteinte.py      # probabilité d'atteinte de l'objectif annuel
-├── anomalies.py                # détection des jours de vente anormaux
-├── validation_modele.py        # validation (backtesting) du modèle de prévision
-├── app.py                      # dashboard Streamlit (interface)
-├── requirements.txt            # librairies à installer
-└── README.md                   # ce fichier
-```
-
-## Modèle de données
-
-**`data/ventes.csv`** — une ligne = ventes d'une sous-catégorie un jour donné :
-
-| date | categorie | sous_categorie | quantite | region |
-|------|-----------|----------------|----------|--------|
-| 2026-01-01 | Internet Fixe | Rapido | 6 | Grand Tunis |
-
-> C'est exactement le format attendu par l'onglet **Saisie / Import** : un
-> modèle vierge est téléchargeable directement depuis le dashboard.
-
-**`data/objectifs.csv`** — un objectif mensuel par catégorie :
-
-| categorie | annee | mois | objectif_mensuel |
-|-----------|-------|------|------------------|
-| Internet Fixe | 2026 | 1 | 1309 |
-
-> Les données actuelles sont **simulées** (démo) et couvrent 2024, 2025 et
-> janvier→juin 2026. Les mois suivants sont ceux que le module de prévision estime.
-
-## Note
-
-Projet réalisé dans un cadre pédagogique. Les données sont simulées et ne
-reflètent pas les chiffres réels de Tunisie Télécom.
+**Amer Oun** — [LinkedIn](https://www.linkedin.com/in/amer-oun-b33212312/) · [Email](mailto:ounamer31@gmail.com)
