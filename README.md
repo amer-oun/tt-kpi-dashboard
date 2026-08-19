@@ -2,6 +2,8 @@
 
 > Sales performance dashboard for a Tunisian telecom operator — with time-series forecasting and anomaly detection. Built as a final-year project (PFE).
 
+[![CI](https://github.com/amer-oun/tt-kpi-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/amer-oun/tt-kpi-dashboard/actions/workflows/ci.yml)
+
 <p align="center">
   <img width="900" alt="Overview dashboard" src="https://github.com/user-attachments/assets/97dd2713-f116-4498-b440-3325b4173432" />
 </p>
