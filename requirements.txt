@@ -8,3 +8,10 @@ pandas>=2.2
 plotly>=5.22
 numpy>=1.26
 fpdf2>=2.7
+
+# Lecture des fichiers Excel deposes dans l'onglet "Saisie / Import"
+# (pd.read_excel). Sans elles, l'import .xlsx/.xls echoue en ligne :
+#   openpyxl -> fichiers .xlsx (format moderne)
+#   xlrd     -> fichiers .xls  (ancien format Excel)
+openpyxl>=3.1
+xlrd>=2.0
