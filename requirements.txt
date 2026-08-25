@@ -3,7 +3,9 @@
 # Le dashboard lit seulement les CSV : il n'a pas besoin de Prophet/scipy.
 # (versions volontairement souples pour s'installer sur n'importe quelle
 #  version recente de Python en ligne)
-streamlit>=1.40
+# >=1.50 : la syntaxe width="stretch" (qui remplace use_container_width,
+# supprime fin 2025) doit etre disponible.
+streamlit>=1.50
 pandas>=2.2
 plotly>=5.22
 numpy>=1.26

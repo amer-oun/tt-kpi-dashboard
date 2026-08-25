@@ -39,3 +39,9 @@ Rapport_PFE.synctex.gz
 # Skills installees localement (outils, pas du code projet)
 .agents/
 skills-lock.json
+
+# Base de donnees SQLite : elle est REGENEREE automatiquement a partir des
+# CSV au demarrage (base_donnees.initialiser_base). On ne la versionne pas,
+# pour que le depot ne contienne pas de donnees dupliquees ni d'empreintes
+# de mots de passe.
+data/kpilot.db

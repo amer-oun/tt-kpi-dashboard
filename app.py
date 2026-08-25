@@ -9,6 +9,10 @@ import streamlit as st
 # Logique de calcul KPI partagee avec calcul_kpi.py (voir kpi.py)
 from kpi import preparer_ventes, calculer_kpi
 
+# Base de donnees SQLite : comptes utilisateurs, ventes et objectifs
+# (voir base_donnees.py pour le detail des tables et de la securite)
+import base_donnees as bd
+
 # ============================================================================
 #  Palette "console de supervision telecom" (reutilisee CSS + graphiques)
 # ============================================================================
@@ -301,6 +305,25 @@ st.markdown(
     /* densite "dashboard" : marges resserrees */
     .block-container {{ padding-top: 1.2rem; padding-bottom: 2.5rem; max-width: 1280px; }}
 
+    /* ---------- Page de connexion ---------- */
+    /* Le formulaire est centre et limite en largeur : sur un ecran large,
+       un champ de saisie etire sur 1200 px serait desagreable a lire. */
+    .kpilot-login-logo {{ text-align: center; margin: 6vh 0 0 0; }}
+    .kpilot-login-logo img {{ height: 78px; }}
+    .kpilot-login-titre {{
+        text-align: center; color: var(--tt-nuit); margin: 18px 0 2px 0;
+        font-size: 1.5rem; font-weight: 700;
+    }}
+    .kpilot-login-sous {{
+        text-align: center; color: var(--tt-muet); margin: 0 0 22px 0;
+        font-size: .92rem;
+    }}
+    [data-testid="stForm"] {{
+        max-width: 380px; margin: 0 auto; background: #FFFFFF;
+        border: 1px solid #E2E8F0; border-radius: 14px; padding: 22px 22px 8px 22px;
+        box-shadow: 0 8px 26px rgba(10,42,74,.08);
+    }}
+
     /* ---------- Bandeau d'en-tete (masthead) ---------- */
     .tt-masthead {{
         position: relative; overflow: hidden;
@@ -441,6 +464,81 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ============================================================================
+#  AUTHENTIFICATION (controle d'acces par role)
+# ============================================================================
+# Deux acteurs utilisent l'application (voir chapitre 2 du rapport) :
+#   - le RESPONSABLE COMMERCIAL : acces complet, y compris l'import mensuel ;
+#   - l'ANALYSTE / DIRECTION    : consultation et export uniquement.
+# Tant que l'utilisateur n'est pas identifie, on affiche l'ecran de connexion
+# et on ARRETE le script (st.stop) : rien d'autre ne s'affiche.
+
+# On prepare la base au demarrage (creation du fichier, des tables et des
+# comptes si c'est le premier lancement). L'appel est sans effet ensuite.
+bd.initialiser_base()
+
+# Onglets autorises pour chaque role. C'est la traduction en code du
+# diagramme des cas d'utilisation : l'analyste ne peut pas injecter de
+# donnees, il consulte et exporte.
+ONGLETS_PAR_ROLE = {
+    "responsable_commercial": [
+        "Saisie / Import", "Tableau & mensuel", "Suivi cumule",
+        "Detail sous-categories", "Comparaison categories",
+        "Analyse regionale", "Prevision & alertes",
+    ],
+    "analyste_direction": [
+        "Tableau & mensuel", "Suivi cumule",
+        "Detail sous-categories", "Comparaison categories",
+        "Analyse regionale", "Prevision & alertes",
+    ],
+}
+
+
+def afficher_page_connexion():
+    """Affiche le formulaire de connexion et interrompt le reste de la page."""
+    if os.path.exists("assets/logo_kpilot.png"):
+        st.markdown(
+            f'<div class="kpilot-login-logo">'
+            f'<img src="{image_data_uri("assets/logo_kpilot.png")}" alt="KPIlot"/></div>',
+            unsafe_allow_html=True,
+        )
+    st.markdown(
+        '<h2 class="kpilot-login-titre">Connexion a KPIlot</h2>'
+        '<p class="kpilot-login-sous">Suivi et prevision des KPI de vente &middot; Tunisie Telecom</p>',
+        unsafe_allow_html=True,
+    )
+
+    # st.form regroupe plusieurs champs : le script n'est relance qu'au clic
+    # sur le bouton, et non a chaque frappe au clavier.
+    with st.form("formulaire_connexion"):
+        nom_saisi = st.text_input("Identifiant")
+        mot_de_passe_saisi = st.text_input("Mot de passe", type="password")
+        valider = st.form_submit_button("Se connecter")
+
+    if valider:
+        utilisateur_trouve = bd.verifier_identifiants(nom_saisi, mot_de_passe_saisi)
+        if utilisateur_trouve is None:
+            # Message volontairement vague : on ne precise pas si c'est
+            # l'identifiant ou le mot de passe qui est faux, pour ne pas
+            # aider quelqu'un qui chercherait a deviner un compte.
+            st.error("Identifiant ou mot de passe incorrect.")
+        else:
+            # On memorise l'utilisateur dans la session, puis on relance la
+            # page : cette fois le test plus bas laissera passer.
+            st.session_state["utilisateur"] = utilisateur_trouve
+            st.rerun()
+
+    st.stop()  # rien de ce qui suit dans app.py n'est execute
+
+
+# Porte d'entree : si personne n'est connecte, on n'affiche que la connexion.
+if "utilisateur" not in st.session_state:
+    afficher_page_connexion()
+
+utilisateur = st.session_state["utilisateur"]
+role_utilisateur = utilisateur["role"]
+onglets_autorises = ONGLETS_PAR_ROLE[role_utilisateur]
+
 # ---- Bandeau d'en-tete ----
 # Marque KPIlot (version blanche posee sur le bandeau fonce) ; repli sur le titre
 # texte si l'image n'est pas encore disponible.
@@ -473,16 +571,18 @@ st.markdown(
 # soit le fichier de demonstration (mode demo). Quand on depose un fichier dans
 # l'onglet "Saisie / Import", il est memorise dans st.session_state ; a chaque
 # reexecution du script, Streamlit repasse ici et utilise ces donnees a la place.
-if "ventes_importees" in st.session_state:
-    ventes = st.session_state["ventes_importees"]
-    source_donnees = st.session_state.get("nom_fichier", "fichier importe")
-    mode_reel = True
-else:
-    ventes = pd.read_csv("data/ventes.csv")
-    source_donnees = "donnees de demonstration (data/ventes.csv)"
-    mode_reel = False
+# Les ventes et les objectifs sont desormais lus dans la BASE DE DONNEES
+# (et non plus directement dans les CSV). L'import mensuel ecrit dans cette
+# meme base : le tableau de bord reflete donc toujours son contenu reel.
+ventes = bd.lire_ventes()
+objectifs = bd.lire_objectifs()
 
-objectifs = pd.read_csv("data/objectifs.csv")
+# Un import a-t-il deja eu lieu pendant cette session ? (sert a l'affichage)
+mode_reel = "dernier_import" in st.session_state
+source_donnees = (
+    st.session_state.get("dernier_import", "base de donnees (data/kpilot.db)")
+    if mode_reel else "base de donnees (data/kpilot.db)"
+)
 
 prevision = charger_si_existe("data/prevision.csv")
 atteinte = charger_si_existe("data/atteinte_objectif.csv")
@@ -497,6 +597,19 @@ kpi = calculer_kpi(ventes, objectifs)
 # ============================================================================
 #  Selecteurs (barre laterale)
 # ============================================================================
+# ---- Identite de l'utilisateur connecte + deconnexion ----
+st.sidebar.markdown(
+    f"**{utilisateur['nom_complet']}**  \n"
+    f"<span style='color:#5A7086;font-size:.85rem'>connecte en tant que "
+    f"« {utilisateur['nom_utilisateur']} »</span>",
+    unsafe_allow_html=True,
+)
+if st.sidebar.button("Se deconnecter"):
+    # On vide la session : l'utilisateur revient a l'ecran de connexion.
+    st.session_state.clear()
+    st.rerun()
+st.sidebar.divider()
+
 st.sidebar.header("Filtres")
 categories = kpi["categorie"].unique()
 categorie_choisie = st.sidebar.selectbox("Categorie", categories)
@@ -613,103 +726,125 @@ st.download_button(
 # ============================================================================
 #  Onglets
 # ============================================================================
-onglet_import, onglet_tableau, onglet_cumule, onglet_sous_categories, onglet_comparaison, onglet_regions, onglet_prevision = st.tabs(
-    [
-        "Saisie / Import",
-        "Tableau & mensuel",
-        "Suivi cumule",
-        "Detail sous-categories",
-        "Comparaison categories",
-        "Analyse regionale",
-        "Prevision & alertes",
-    ]
-)
+# Les onglets affiches dependent du ROLE de l'utilisateur connecte.
+# st.tabs recoit donc la liste calculee plus haut (ONGLETS_PAR_ROLE), et on
+# range les onglets obtenus dans un dictionnaire pour les retrouver par nom.
+liste_onglets = st.tabs(onglets_autorises)
+onglets = dict(zip(onglets_autorises, liste_onglets))
 
 # --- Onglet 0 : interface d'entree (import du fichier mensuel de realisations) ---
-with onglet_import:
-    st.subheader("Import des realisations du mois")
-    st.write(
-        "Chaque mois, deposez ici le fichier des ventes reelles (Excel .xlsx ou "
-        "CSV). Les KPI seront recalcules automatiquement a partir de ce fichier."
-    )
+# L'import est reserve au responsable commercial : pour l'analyste,
+# cet onglet n'existe tout simplement pas (controle d'acces par role).
+if "Saisie / Import" in onglets:
+    with onglets["Saisie / Import"]:
+        st.subheader("Import des realisations du mois")
+        st.write(
+            "Chaque mois, deposez ici le fichier des ventes reelles (Excel .xlsx ou "
+            "CSV). Les lignes sont **enregistrees dans la base de donnees** et les "
+            "KPI sont recalcules immediatement."
+        )
 
-    # Indicateur de la source actuellement utilisee par le tableau de bord
-    if mode_reel:
-        st.success(f"Source active : **{source_donnees}** (fichier importe).")
-    else:
-        st.info(f"Source active : **{source_donnees}**. Aucun fichier importe pour l'instant.")
+        # Etat actuel de la base : combien de lignes contient-elle ?
+        totaux_base = bd.compter_lignes()
+        colonne_v, colonne_o, colonne_u = st.columns(3)
+        colonne_v.metric("Ventes en base", f"{totaux_base['ventes']:,}".replace(",", " "))
+        colonne_o.metric("Objectifs en base", totaux_base["objectifs"])
+        colonne_u.metric("Comptes utilisateurs", totaux_base["utilisateurs"])
 
-    # Rappel du format attendu + modele telechargeable (extrait des donnees demo)
-    st.markdown(
-        "**Format attendu** (une ligne par vente) : "
-        + ", ".join(f"`{c}`" for c in COLONNES_ATTENDUES)
-    )
-    modele = pd.DataFrame(
-        {
-            "date": ["2026-07-01", "2026-07-01"],
-            "categorie": ["Internet Fixe", "Mobile"],
-            "sous_categorie": ["ADSL", "Data"],
-            "quantite": [6, 12],
-            "region": ["Sfax", "Grand Tunis"],
-        }
-    )
-    st.download_button(
-        "Telecharger un modele vierge (CSV)",
-        data=modele.to_csv(index=False).encode("utf-8"),
-        file_name="modele_realisations.csv",
-        mime="text/csv",
-    )
-
-    st.divider()
-
-    # Le bouton d'import proprement dit.
-    # On lui donne une "cle" (key) dont le numero peut changer : en incrementant
-    # ce numero (bouton "Revenir aux donnees de demo"), Streamlit recree un bouton
-    # VIDE, ce qui evite que l'ancien fichier soit reimporte aussitot apres.
-    if "uploader_key" not in st.session_state:
-        st.session_state["uploader_key"] = 0
-    fichier = st.file_uploader(
-        "Deposer le fichier des realisations",
-        type=["xlsx", "xls", "csv"],
-        key=f"upload_{st.session_state['uploader_key']}",
-    )
-
-    if fichier is not None:
-        try:
-            df_importe = lire_fichier_importe(fichier)
-        except Exception as erreur:  # fichier illisible / corrompu
-            st.error(f"Impossible de lire le fichier : {erreur}")
+        if mode_reel:
+            st.success(f"Dernier import : **{source_donnees}**.")
         else:
-            valide, message = valider_ventes(df_importe)
-            if not valide:
-                st.error(message)
-            else:
-                st.success(message)
-                st.caption("Apercu des premieres lignes du fichier importe :")
-                st.dataframe(df_importe.head(), use_container_width=True)
-                # On memorise et on recharge le tableau de bord avec ces donnees.
-                # Le test sur le nom evite une boucle de reexecution infinie :
-                # une fois le fichier pris en compte, on ne relance plus.
-                if st.session_state.get("nom_fichier") != fichier.name:
-                    st.session_state["ventes_importees"] = df_importe
-                    st.session_state["nom_fichier"] = fichier.name
-                    st.rerun()
+            st.info("Aucun import effectue pendant cette session.")
 
-    # Bouton pour revenir aux donnees de demonstration
-    if mode_reel:
+        # Rappel du format attendu + modele telechargeable (extrait des donnees demo)
+        st.markdown(
+            "**Format attendu** (une ligne par vente) : "
+            + ", ".join(f"`{c}`" for c in COLONNES_ATTENDUES)
+        )
+        modele = pd.DataFrame(
+            {
+                "date": ["2026-07-01", "2026-07-01"],
+                "categorie": ["Internet Fixe", "Mobile"],
+                "sous_categorie": ["ADSL", "Data"],
+                "quantite": [6, 12],
+                "region": ["Sfax", "Grand Tunis"],
+            }
+        )
+        st.download_button(
+            "Telecharger un modele vierge (CSV)",
+            data=modele.to_csv(index=False).encode("utf-8"),
+            file_name="modele_realisations.csv",
+            mime="text/csv",
+        )
+
         st.divider()
-        if st.button("Revenir aux donnees de demonstration"):
-            st.session_state.pop("ventes_importees", None)
+
+        # Le bouton d'import proprement dit.
+        # On lui donne une "cle" (key) dont le numero peut changer : en incrementant
+        # ce numero (bouton "Revenir aux donnees de demo"), Streamlit recree un bouton
+        # VIDE, ce qui evite que l'ancien fichier soit reimporte aussitot apres.
+        if "uploader_key" not in st.session_state:
+            st.session_state["uploader_key"] = 0
+        fichier = st.file_uploader(
+            "Deposer le fichier des realisations",
+            type=["xlsx", "xls", "csv"],
+            key=f"upload_{st.session_state['uploader_key']}",
+        )
+
+        if fichier is not None:
+            try:
+                df_importe = lire_fichier_importe(fichier)
+            except Exception as erreur:  # fichier illisible / corrompu
+                st.error(f"Impossible de lire le fichier : {erreur}")
+            else:
+                valide, message = valider_ventes(df_importe)
+                if not valide:
+                    st.error(message)
+                else:
+                    st.success(message)
+                    st.caption("Apercu des premieres lignes du fichier importe :")
+                    st.dataframe(df_importe.head(), width="stretch")
+                    # On ecrit dans la base, une seule fois par fichier.
+                    # Le test sur le nom evite une boucle de reexecution infinie :
+                    # une fois le fichier enregistre, on ne recommence pas.
+                    if st.session_state.get("nom_fichier") != fichier.name:
+                        resume = bd.importer_ventes(df_importe)
+                        mois_lisibles = ", ".join(
+                            f"{mois:02d}/{annee}" for annee, mois in resume["mois"]
+                        )
+                        st.session_state["nom_fichier"] = fichier.name
+                        st.session_state["dernier_import"] = (
+                            f"{fichier.name} ({mois_lisibles})"
+                        )
+                        st.session_state["resume_import"] = resume
+                        st.rerun()
+
+        # Compte rendu de la derniere ecriture en base
+        if "resume_import" in st.session_state:
+            resume = st.session_state["resume_import"]
+            st.info(
+                f"Ecriture en base : {resume['ajoutees']} ligne(s) ajoutee(s), "
+                f"{resume['supprimees']} ancienne(s) ligne(s) remplacee(s) pour "
+                f"le(s) mois concerne(s). Reimporter le meme fichier ne cree donc "
+                f"aucun doublon."
+            )
+
+        # Bouton pour remettre la base dans son etat de demonstration
+        st.divider()
+        if st.button("Reinitialiser la base (donnees de demonstration)"):
+            bd.reinitialiser_depuis_csv()
             st.session_state.pop("nom_fichier", None)
+            st.session_state.pop("dernier_import", None)
+            st.session_state.pop("resume_import", None)
             # On change la cle du bouton d'upload -> il se vide vraiment,
             # sinon l'ancien fichier serait reimporte immediatement.
             st.session_state["uploader_key"] += 1
             st.rerun()
 
 # --- Onglet 1 : tableau KPI + histogramme mensuel ---
-with onglet_tableau:
+with onglets["Tableau & mensuel"]:
     st.subheader(f"Tableau KPI - {categorie_choisie} {annee_choisie}")
-    st.dataframe(kpi_filtre, use_container_width=True)
+    st.dataframe(kpi_filtre, width="stretch")
 
     kpi_graphique = kpi_filtre.melt(
         id_vars=["mois"],
@@ -732,7 +867,7 @@ with onglet_tableau:
         labels={"mois": "Mois", "valeur": "Quantite", "type": "Legende"},
     )
     figure.update_layout(template="plotly_white")
-    st.plotly_chart(figure, use_container_width=True)
+    st.plotly_chart(figure, width="stretch")
 
     # --- Ventes moyennes par jour de la semaine ---
     # On exploite ici la finesse JOURNALIERE des donnees (le reste du dashboard
@@ -762,10 +897,10 @@ with onglet_tableau:
         labels={"jour": "Jour", "quantite": "Ventes moyennes / jour"},
     )
     figure_jours.update_layout(template="plotly_white")
-    st.plotly_chart(figure_jours, use_container_width=True)
+    st.plotly_chart(figure_jours, width="stretch")
 
 # --- Onglet 2 : suivi cumule ---
-with onglet_cumule:
+with onglets["Suivi cumule"]:
     kpi_cumule = kpi_filtre.sort_values("mois").copy()
     kpi_cumule["ventes_cumulees"] = kpi_cumule["ventes_reelles"].cumsum()
     kpi_cumule["objectif_cumule"] = kpi_cumule["objectif_mensuel"].cumsum()
@@ -791,10 +926,10 @@ with onglet_cumule:
         labels={"mois": "Mois", "valeur": "Quantite cumulee", "type": "Legende"},
     )
     figure_cumule.update_layout(template="plotly_white")
-    st.plotly_chart(figure_cumule, use_container_width=True)
+    st.plotly_chart(figure_cumule, width="stretch")
 
 # --- Onglet 3 : detail par sous-categorie ---
-with onglet_sous_categories:
+with onglets["Detail sous-categories"]:
     sous_categories_disponibles = sorted(
         ventes.loc[ventes["categorie"] == categorie_choisie, "sous_categorie"].unique()
     )
@@ -825,10 +960,10 @@ with onglet_sous_categories:
         labels={"mois": "Mois", "quantite": "Quantite", "sous_categorie": "Sous-categorie"},
     )
     figure_sous_categorie.update_layout(template="plotly_white")
-    st.plotly_chart(figure_sous_categorie, use_container_width=True)
+    st.plotly_chart(figure_sous_categorie, width="stretch")
 
 # --- Onglet 4 : comparaison des categories ---
-with onglet_comparaison:
+with onglets["Comparaison categories"]:
     st.subheader(f"Realise par categorie et par mois - {annee_choisie}")
     figure_comparaison = px.bar(
         kpi_annee,
@@ -840,7 +975,7 @@ with onglet_comparaison:
         labels={"mois": "Mois", "ventes_reelles": "Quantite", "categorie": "Categorie"},
     )
     figure_comparaison.update_layout(template="plotly_white")
-    st.plotly_chart(figure_comparaison, use_container_width=True)
+    st.plotly_chart(figure_comparaison, width="stretch")
 
     st.subheader(f"Taux de realisation par categorie et par mois - {annee_choisie}")
     figure_taux_comparaison = px.line(
@@ -853,7 +988,7 @@ with onglet_comparaison:
         labels={"mois": "Mois", "taux_atteinte_pct": "Taux de realisation (%)", "categorie": "Categorie"},
     )
     figure_taux_comparaison.update_layout(template="plotly_white")
-    st.plotly_chart(figure_taux_comparaison, use_container_width=True)
+    st.plotly_chart(figure_taux_comparaison, width="stretch")
 
     # --- Evolution pluriannuelle (a periode comparable : 1er semestre) ---
     # 2026 est incomplet (jan-juin), donc on compare le MEME semestre chaque
@@ -874,14 +1009,14 @@ with onglet_comparaison:
     )
     figure_evolution.update_layout(template="plotly_white")
     figure_evolution.update_xaxes(dtick=1)  # afficher des annees entieres
-    st.plotly_chart(figure_evolution, use_container_width=True)
+    st.plotly_chart(figure_evolution, width="stretch")
     st.caption(
         "Comparaison a periode identique (janvier-juin) pour chaque annee, "
         "afin d'eviter le biais du 2026 incomplet."
     )
 
 # --- Onglet 5 : analyse regionale ---
-with onglet_regions:
+with onglets["Analyse regionale"]:
     # Les objectifs n'existent pas au niveau region (comme pour les
     # sous-categories) : on montre donc uniquement le realise par region.
     ventes_region_annee = ventes[
@@ -927,7 +1062,7 @@ with onglet_regions:
         labels={"quantite": "Ventes", "region": "Region"},
     )
     figure_region.update_layout(template="plotly_white")
-    st.plotly_chart(figure_region, use_container_width=True)
+    st.plotly_chart(figure_region, width="stretch")
 
     # --- Repartition mensuelle empilee par region ---
     st.subheader(f"Repartition mensuelle par region - {annee_choisie}")
@@ -943,7 +1078,7 @@ with onglet_regions:
         labels={"mois": "Mois", "quantite": "Ventes", "region": "Region"},
     )
     figure_region_mois.update_layout(template="plotly_white")
-    st.plotly_chart(figure_region_mois, use_container_width=True)
+    st.plotly_chart(figure_region_mois, width="stretch")
 
     # --- Tableau des realisations par region (une ligne = une region) ---
     # Tableau croise : regions en lignes, mois en colonnes, + une colonne Total.
@@ -955,7 +1090,7 @@ with onglet_regions:
     )
     tableau_realisations["Total"] = tableau_realisations.sum(axis=1)
     tableau_realisations = tableau_realisations.sort_values("Total", ascending=False)
-    st.dataframe(tableau_realisations, use_container_width=True)
+    st.dataframe(tableau_realisations, width="stretch")
 
     # Bouton pour telecharger ces realisations au format CSV
     realisations_csv = (
@@ -979,7 +1114,7 @@ with onglet_regions:
     )
 
 # --- Onglet 6 : prevision + probabilite d'atteinte + anomalies ---
-with onglet_prevision:
+with onglets["Prevision & alertes"]:
 
     # ===== A. Prevision Prophet =====
     st.subheader(f"Prevision des ventes - {categorie_choisie}")
@@ -1025,7 +1160,7 @@ with onglet_prevision:
         figure_prevision.update_layout(
             template="plotly_white", xaxis_title="Mois", yaxis_title="Quantite mensuelle"
         )
-        st.plotly_chart(figure_prevision, use_container_width=True)
+        st.plotly_chart(figure_prevision, width="stretch")
         st.caption(
             "Points bleu nuit = ventes reelles connues. Ligne bleue = prevision Prophet. "
             "Zone bleue = incertitude du modele (intervalle de confiance)."
@@ -1076,7 +1211,7 @@ with onglet_prevision:
             # Jauge visuelle du taux d'atteinte annuel (compteur)
             st.plotly_chart(
                 jauge_taux(ligne["taux_estime_pct"], f"Taux d'atteinte estime - {int(ligne['annee'])}"),
-                use_container_width=True,
+                width="stretch",
             )
             if ligne["ecart_a_combler"] > 0:
                 st.info(
@@ -1111,7 +1246,7 @@ with onglet_prevision:
     else:
         anomalies_categorie = anomalies[anomalies["categorie"] == categorie_choisie]
         st.write(f"{len(anomalies_categorie)} anomalie(s) detectee(s) pour cette categorie.")
-        st.dataframe(anomalies_categorie, use_container_width=True)
+        st.dataframe(anomalies_categorie, width="stretch")
 
     # ===== D. Fiabilite du modele (validation retrospective / backtesting) =====
     # But : PROUVER que la prevision est credible. Le modele a ete entraine
@@ -1187,7 +1322,7 @@ with onglet_prevision:
             template="plotly_white", xaxis_title="Mois (test : jan-juin 2026)",
             yaxis_title="Quantite mensuelle",
         )
-        st.plotly_chart(figure_validation, use_container_width=True)
+        st.plotly_chart(figure_validation, width="stretch")
         st.caption(
             "Test du modele : entraine uniquement sur 2024-2025, il predit jan-juin 2026 "
             "sans jamais avoir vu ces mois. On compare sa prevision (bleu pointille) aux "
