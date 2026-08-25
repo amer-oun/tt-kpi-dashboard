@@ -20,6 +20,7 @@ Rapport_PFE.tex
 Rapport_PFE_relecture.docx
 Rapport_PFE.lol
 generer_figures.py
+generer_figure_bdd.py
 
 # Figures et logos du rapport (personnels, non utilises par l'app)
 assets/figures/
