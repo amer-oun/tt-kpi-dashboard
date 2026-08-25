@@ -1088,6 +1088,22 @@ with onglet_prevision:
                     f"Objectif atteint ({int(abs(ligne['ecart_a_combler']))} ventes au-dela de la cible)."
                 )
 
+            # Lecture de la probabilite : sur des donnees simulees tres
+            # regulieres, Prophet produit un intervalle de confiance etroit.
+            # La loi normale bascule alors brutalement vers 0 % ou 100 % des
+            # que l'objectif sort de cette fourchette : la probabilite devient
+            # un "tout ou rien" peu informatif. L'indicateur a lire est le
+            # TAUX estime, qui dit de combien on s'approche de la cible.
+            if ligne["probabilite_atteinte_pct"] in (0.0, 100.0):
+                st.caption(
+                    "Lecture : l'historique simule est tres regulier, donc la fourchette "
+                    "d'incertitude de Prophet est etroite et la probabilite bascule vers "
+                    "0 % ou 100 % des que l'objectif sort de cette fourchette. L'indicateur "
+                    f"a retenir ici est le taux estime ({ligne['taux_estime_pct']} %). "
+                    "Sur des ventes reelles, plus irregulieres, la fourchette s'elargit et "
+                    "la probabilite redevient nuancee."
+                )
+
     # ===== C. Anomalies detectees =====
     st.subheader(f"Jours de vente anormaux - {categorie_choisie}")
     if anomalies is None:

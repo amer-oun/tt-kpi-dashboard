@@ -57,6 +57,45 @@ Per-category tracking across all Internet Fixe (Rapido, ADSL, VDSL, FO, WAFI, Bo
 
 ---
 
+## Model validation
+
+The forecast isn't taken on trust — it's **backtested**. The model is trained only
+on 2024–2025, then asked to predict January–June 2026, and its predictions are
+compared against the sales actually recorded over those six months (data it never
+saw during training).
+
+| Category | MAE (sales/month) | MAPE | Reliability (100 − MAPE) |
+|---|---:|---:|---:|
+| Internet Fixe | ≈ 195 | 13.5 % | **86.5 %** |
+| Mobile | ≈ 201 | 11.1 % | **88.9 %** |
+
+Roughly **87 % average reliability** on unseen data — reasonable for a first model
+trained on a short history, and it improves as the history grows. Reproduce with
+`python validation_modele.py`; the dashboard reads the results in the
+*Prévision & alertes* tab.
+
+> **On the achievement probability:** the simulated history is very regular, so
+> Prophet's confidence interval is narrow and the probability collapses to 0 % or
+> 100 % as soon as the target falls outside that band. The meaningful indicator is
+> the **estimated achievement rate** (96.8 % for Internet Fixe, 98.4 % for Mobile).
+> On real, noisier sales data the interval widens and the probability becomes
+> informative again.
+
+---
+
+## Tests
+
+```bash
+pytest -v
+```
+
+Four unit tests cover the KPI engine ([`kpi.py`](kpi.py)): year/month extraction,
+the achievement-rate formula, division-by-zero protection when a target is 0, and
+the inner join that drops months without a target. They run on every push via
+[GitHub Actions](.github/workflows/ci.yml).
+
+---
+
 ## Tech stack
 
 | Layer | Tech |
