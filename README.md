@@ -64,8 +64,8 @@ Per-category tracking across all Internet Fixe (Rapido, ADSL, VDSL, FO, WAFI, Bo
 | Framework | Streamlit |
 | Language | Python 3 |
 | Forecasting | Prophet (Meta) |
-| Analysis | pandas · NumPy · scikit-learn |
-| Visualization | Plotly / Altair |
+| Analysis | pandas · NumPy · SciPy |
+| Visualization | Plotly |
 | Deployment | Streamlit Community Cloud (auto-deploy from `master`) |
 
 ## Data
