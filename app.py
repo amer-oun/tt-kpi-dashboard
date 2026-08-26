@@ -370,6 +370,12 @@ st.markdown(
     }}
     .stButton button[kind="primary"]:hover {{ filter: brightness(1.08); }}
 
+    /* Titre du bandeau de filtres, dans le corps de la page */
+    .kp-filtres-titre {{
+        color: var(--tt-muet); font-size: .78rem; font-weight: 700;
+        letter-spacing: .4px; margin: 2px 0 6px 2px;
+    }}
+
     /* Identite dans la barre laterale */
     .kp-qui {{ padding: 2px 0 6px 0; }}
     .kp-qui-nom {{ color: var(--tt-nuit); font-weight: 700; font-size: .98rem; }}
@@ -800,18 +806,82 @@ st.sidebar.markdown(
     f'</div>',
     unsafe_allow_html=True,
 )
-if st.sidebar.button("Se deconnecter"):
+
+# ---- Mon compte : ce que je suis, ce a quoi j'ai droit, mon mot de passe ----
+with st.sidebar.expander("Mon compte"):
+    st.markdown(f"**Identifiant** : `{utilisateur['nom_utilisateur']}`")
+    st.markdown(f"**Nom** : {utilisateur['nom_complet']}")
+    st.markdown("**Role** : " + LIBELLE_ROLE.get(role_utilisateur, role_utilisateur))
+    st.caption(
+        f"Acces autorise : {len(onglets_autorises)} onglets sur "
+        f"{max(len(liste) for liste in ONGLETS_PAR_ROLE.values())}."
+        + ("" if "Saisie / Import" in onglets_autorises else
+           " L'import des realisations est reserve au responsable commercial.")
+    )
+
+    st.markdown("**Changer mon mot de passe**")
+    # st.form regroupe plusieurs champs : la page n'est renvoyee au serveur
+    # qu'au clic sur le bouton, et non a chaque frappe au clavier.
+    with st.form("form_mot_de_passe", clear_on_submit=True):
+        ancien = st.text_input("Mot de passe actuel", type="password")
+        nouveau = st.text_input("Nouveau mot de passe", type="password")
+        confirmation = st.text_input("Confirmer le nouveau", type="password")
+        valider = st.form_submit_button("Enregistrer", width="stretch")
+
+    if valider:
+        if nouveau != confirmation:
+            st.error("Les deux nouveaux mots de passe ne sont pas identiques.")
+        else:
+            # Toute la verification est faite par base_donnees.py : l'interface
+            # ne decide rien en matiere de securite, elle affiche le resultat.
+            succes, message = bd.changer_mot_de_passe(
+                utilisateur["nom_utilisateur"], ancien, nouveau
+            )
+            (st.success if succes else st.error)(message)
+            if succes:
+                st.caption(
+                    "Il servira a votre prochaine connexion. "
+                    "Le mot de passe de demonstration ne fonctionne plus."
+                )
+
+if st.sidebar.button("Se deconnecter", width="stretch"):
     # On vide la session : l'utilisateur revient a l'ecran de connexion.
     st.session_state.clear()
     st.rerun()
 st.sidebar.divider()
 
-st.sidebar.header("Filtres")
-categories = kpi["categorie"].unique()
-categorie_choisie = st.sidebar.selectbox("Categorie", categories)
+# ============================================================================
+#  Perimetre analyse : quelle categorie, quelle annee
+# ============================================================================
+# Ces deux filtres etaient dans la barre laterale. Probleme constate a l'usage :
+# on ne voyait qu'une categorie a la fois ("Internet Fixe"), sans aucun indice
+# qu'il en existait une seconde ("Mobile"). Un menu deroulant CACHE ses options.
+#
+# On les remonte donc dans le corps de la page, et on remplace le menu
+# deroulant par un segmented_control : toutes les categories sont affichees
+# COTE A COTE. Celle qui est active se voit, celles qui ne le sont pas aussi.
+categories = sorted(kpi["categorie"].unique())
 
-annees_disponibles = kpi.loc[kpi["categorie"] == categorie_choisie, "annee"].unique()
-annee_choisie = st.sidebar.selectbox("Annee", sorted(annees_disponibles))
+st.markdown('<div class="kp-filtres-titre">Perimetre analyse</div>',
+            unsafe_allow_html=True)
+colonne_categorie, colonne_annee = st.columns([3, 1])
+
+categorie_choisie = colonne_categorie.segmented_control(
+    "Categorie", categories, default=categories[0],
+    label_visibility="collapsed", key="filtre_categorie",
+)
+# segmented_control renvoie None si l'utilisateur reclique sur le bouton deja
+# actif (il le "deselectionne"). Un tableau de bord sans categorie n'a aucun
+# sens : on revient alors a la premiere.
+if categorie_choisie is None:
+    categorie_choisie = categories[0]
+
+annees_disponibles = sorted(
+    kpi.loc[kpi["categorie"] == categorie_choisie, "annee"].unique()
+)
+annee_choisie = colonne_annee.selectbox(
+    "Annee", annees_disponibles, label_visibility="collapsed",
+)
 
 kpi_filtre = kpi[(kpi["categorie"] == categorie_choisie) & (kpi["annee"] == annee_choisie)]
 kpi_annee = kpi[kpi["annee"] == annee_choisie]

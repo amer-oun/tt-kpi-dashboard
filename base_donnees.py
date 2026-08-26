@@ -407,6 +407,72 @@ def reinitialiser_depuis_csv():
 
 
 # ============================================================================
+#  6. Gestion du compte : changer son mot de passe
+# ============================================================================
+LONGUEUR_MINIMALE_MOT_DE_PASSE = 8
+
+
+def changer_mot_de_passe(nom_utilisateur, ancien, nouveau):
+    """Change le mot de passe d'un utilisateur.
+
+    Renvoie (True, message) si le changement a eu lieu, (False, message) sinon.
+
+    Trois verifications, dans cet ordre :
+      1. l'ancien mot de passe doit etre correct (on reutilise pour cela la
+         fonction d'authentification : on ne reecrit pas la meme logique deux
+         fois, et on ne peut donc pas se tromper d'un cote seulement) ;
+      2. le nouveau doit faire au moins 8 caracteres ;
+      3. le nouveau doit etre different de l'ancien.
+
+    Point important : on genere un NOUVEAU SEL a chaque changement. Ainsi,
+    meme si quelqu'un avait vu l'ancienne empreinte, elle devient inutile.
+    """
+    if verifier_identifiants(nom_utilisateur, ancien) is None:
+        return False, "Mot de passe actuel incorrect."
+    if len(nouveau) < LONGUEUR_MINIMALE_MOT_DE_PASSE:
+        return False, (
+            f"Le nouveau mot de passe doit faire au moins "
+            f"{LONGUEUR_MINIMALE_MOT_DE_PASSE} caracteres."
+        )
+    if nouveau == ancien:
+        return False, "Le nouveau mot de passe doit etre different de l'ancien."
+
+    sel = generer_sel()
+    empreinte = hacher_mot_de_passe(nouveau, sel)
+
+    connexion = ouvrir_connexion()
+    try:
+        connexion.execute(
+            "UPDATE utilisateurs SET mot_de_passe = ?, sel = ? WHERE nom_utilisateur = ?",
+            (empreinte, sel, nom_utilisateur),
+        )
+        connexion.commit()
+    finally:
+        connexion.close()
+    return True, "Mot de passe modifie."
+
+
+def lire_utilisateur(nom_utilisateur):
+    """Renvoie la fiche d'un utilisateur (sans son mot de passe), ou None.
+
+    Sert a afficher la page "Mon compte" : on veut le nom et le role, jamais
+    l'empreinte ni le sel, qui n'ont aucune raison de circuler dans l'interface.
+    """
+    connexion = ouvrir_connexion()
+    try:
+        ligne = connexion.execute(
+            "SELECT nom_utilisateur, role, nom_complet FROM utilisateurs "
+            "WHERE nom_utilisateur = ?",
+            (nom_utilisateur,),
+        ).fetchone()
+    finally:
+        connexion.close()
+    if ligne is None:
+        return None
+    return {"nom_utilisateur": ligne[0], "role": ligne[1], "nom_complet": ligne[2]}
+
+
+# ============================================================================
 #  Execution directe : permet de (re)construire la base depuis le terminal
 #  avec la commande :  python base_donnees.py
 # ============================================================================

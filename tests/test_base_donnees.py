@@ -242,3 +242,65 @@ def test_la_base_ne_garde_que_les_comptes_declares(base_temporaire):
     # Assert : le compte non declare a ete supprime, les autres sont intacts
     assert bd.verifier_identifiants("ancien.compte", "motdepasse") is None
     assert bd.compter_lignes()["utilisateurs"] == len(bd.COMPTES_PAR_DEFAUT)
+
+
+# ============================================================================
+#  Changement de mot de passe (page "Mon compte")
+# ============================================================================
+def test_changement_de_mot_de_passe_reussi(base_temporaire):
+    """Apres changement, l'ancien mot de passe ne marche plus, le nouveau si."""
+    # Act
+    succes, _ = bd.changer_mot_de_passe("s.benammar", "Salma2026", "NouveauMdp2026")
+    # Assert
+    assert succes is True
+    assert bd.verifier_identifiants("s.benammar", "Salma2026") is None
+    assert bd.verifier_identifiants("s.benammar", "NouveauMdp2026") is not None
+
+
+def test_changement_refuse_si_ancien_mot_de_passe_faux(base_temporaire):
+    """On ne peut pas changer le mot de passe de quelqu'un d'autre sans le sien."""
+    succes, message = bd.changer_mot_de_passe("s.benammar", "pas le bon", "NouveauMdp2026")
+    assert succes is False
+    assert "incorrect" in message.lower()
+    # Le mot de passe d'origine fonctionne toujours : rien n'a ete modifie
+    assert bd.verifier_identifiants("s.benammar", "Salma2026") is not None
+
+
+def test_changement_refuse_si_nouveau_trop_court(base_temporaire):
+    """Un mot de passe de moins de 8 caracteres est refuse."""
+    succes, _ = bd.changer_mot_de_passe("s.benammar", "Salma2026", "court")
+    assert succes is False
+    assert bd.verifier_identifiants("s.benammar", "Salma2026") is not None
+
+
+def test_le_sel_change_a_chaque_changement_de_mot_de_passe(base_temporaire):
+    """Un nouveau sel est tire a chaque changement.
+
+    Sans cela, une empreinte volee avant le changement resterait exploitable
+    pour attaquer la nouvelle.
+    """
+    # Arrange : on releve le sel actuel
+    connexion = bd.ouvrir_connexion()
+    sel_avant = connexion.execute(
+        "SELECT sel FROM utilisateurs WHERE nom_utilisateur = ?", ("s.benammar",)
+    ).fetchone()[0]
+    connexion.close()
+
+    # Act
+    bd.changer_mot_de_passe("s.benammar", "Salma2026", "NouveauMdp2026")
+
+    # Assert
+    connexion = bd.ouvrir_connexion()
+    sel_apres = connexion.execute(
+        "SELECT sel FROM utilisateurs WHERE nom_utilisateur = ?", ("s.benammar",)
+    ).fetchone()[0]
+    connexion.close()
+    assert sel_avant != sel_apres
+
+
+def test_lire_utilisateur_ne_renvoie_jamais_le_mot_de_passe(base_temporaire):
+    """La fiche affichee dans "Mon compte" ne doit contenir aucun secret."""
+    fiche = bd.lire_utilisateur("s.benammar")
+    assert fiche["role"] == "responsable_commercial"
+    assert "mot_de_passe" not in fiche
+    assert "sel" not in fiche
