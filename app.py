@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # Logique de calcul KPI partagee avec calcul_kpi.py (voir kpi.py)
-from kpi import preparer_ventes, calculer_kpi
+from kpi import preparer_ventes, calculer_kpi, separer_mois_complets
 
 # Base de donnees SQLite : comptes utilisateurs, ventes et objectifs
 # (voir base_donnees.py pour le detail des tables et de la securite)
@@ -99,7 +99,7 @@ def logo_html():
             }.get(extension, "image/png")
             with open(chemin, "rb") as fichier:
                 encode = base64.b64encode(fichier.read()).decode()
-            return f'<img class="tt-logo-img" src="data:{type_mime};base64,{encode}" alt="Tunisie Telecom"/>'
+            return f'<img class="tt-logo-img" src="data:{type_mime};base64,{encode}" alt="Tunisie Télécom"/>'
     # Repli : pastille "TT" tant que le logo officiel n'est pas depose
     return '<div class="tt-mark">TT</div>'
 
@@ -158,7 +158,7 @@ def jauge_taux(valeur, titre):
 
 
 def texte_alerte(categorie, taux, manque):
-    """Retourne la phrase d'alerte pour une categorie (reutilisee ecran + PDF)."""
+    """Retourne la phrase d'alerte pour une catégorie (reutilisee ecran + PDF)."""
     if taux is None:
         return f"{categorie} : pas d'objectif defini."
     if taux >= 100:
@@ -182,11 +182,11 @@ def generer_rapport_pdf(categorie, annee, total_realise, total_objectif, taux_gl
     # En-tete
     pdf.set_font("Helvetica", "B", 16)
     pdf.set_text_color(10, 42, 74)
-    pdf.cell(0, 10, "Rapport KPI - Tunisie Telecom", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(0, 10, "Rapport KPI - Tunisie Télécom", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.set_font("Helvetica", "", 11)
     pdf.set_text_color(90, 112, 134)
-    pdf.cell(0, 8, f"Categorie : {categorie}   |   Annee : {annee}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
-    pdf.cell(0, 8, f"Genere le : {date.today().strftime('%d/%m/%Y')}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(0, 8, f"Catégorie : {categorie}   |   Année : {annee}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(0, 8, f"Généré le : {date.today().strftime('%d/%m/%Y')}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(4)
 
     # Chiffres cles
@@ -196,10 +196,10 @@ def generer_rapport_pdf(categorie, annee, total_realise, total_objectif, taux_gl
     pdf.set_font("Helvetica", "", 11)
     taux_txt = f"{taux_global} %" if taux_global is not None else "N/A"
     for ligne_pdf in [
-        f"- Ventes realisees (cumul) : {total_realise}",
+        f"- Ventes réalisées (cumul) : {total_realise}",
         f"- Objectif (cumul) : {total_objectif}",
-        f"- Taux de realisation : {taux_txt}",
-        f"- Ecart : {ecart_global:+} ventes",
+        f"- Taux de réalisation : {taux_txt}",
+        f"- Écart : {ecart_global:+} ventes",
     ]:
         pdf.cell(0, 7, ligne_pdf, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(4)
@@ -592,14 +592,14 @@ LIBELLE_ROLE = {
 
 ONGLETS_PAR_ROLE = {
     "responsable_commercial": [
-        "Saisie / Import", "Tableau & mensuel", "Suivi cumule",
-        "Detail sous-categories", "Comparaison categories",
-        "Analyse regionale", "Prevision & alertes",
+        "Saisie / Import", "Tableau & mensuel", "Suivi cumulé",
+        "Détail sous-catégories", "Comparaison catégories",
+        "Analyse régionale", "Prévision & alertes",
     ],
     "analyste_direction": [
-        "Tableau & mensuel", "Suivi cumule",
-        "Detail sous-categories", "Comparaison categories",
-        "Analyse regionale", "Prevision & alertes",
+        "Tableau & mensuel", "Suivi cumulé",
+        "Détail sous-catégories", "Comparaison catégories",
+        "Analyse régionale", "Prévision & alertes",
     ],
 }
 
@@ -633,8 +633,8 @@ def afficher_page_connexion():
     )
 
     st.markdown(
-        '<p class="kp-login-consigne">Deux profils de demonstration, '
-        'avec des droits differents.</p>',
+        '<p class="kp-login-consigne">Deux profils de démonstration, '
+        'avec des droits différents.</p>',
         unsafe_allow_html=True,
     )
 
@@ -647,9 +647,9 @@ def afficher_page_connexion():
             "mot_de_passe": "Salma2026",
             "nom": "Salma Ben Ammar",
             "fonction": "Responsable commercial",
-            "mission": "Suit les objectifs au quotidien, importe les realisations "
-                       "du mois et corrige les ecarts.",
-            "acces": "7 onglets &middot; import des donnees autorise",
+            "mission": "Suit les objectifs au quotidien, importe les réalisations "
+                       "du mois et corrige les écarts.",
+            "acces": "7 onglets &middot; import des données autorise",
             "couleur": BLEU,
             "couleur_texte": BLEU,
             "initiales": "SB",
@@ -660,7 +660,7 @@ def afficher_page_connexion():
             "nom": "Karim Trabelsi",
             "fonction": "Analyste - Direction",
             "mission": "Analyse les tendances, la projection annuelle et la "
-                       "repartition regionale pour decider.",
+                       "répartition régionale pour décider.",
             "acces": "6 onglets &middot; consultation et export uniquement",
             "couleur": AMBRE,
             "couleur_texte": AMBRE_TEXTE,
@@ -699,7 +699,7 @@ def afficher_page_connexion():
                     if trouve:
                         connecter(trouve)
                     else:
-                        st.error("Compte de demonstration indisponible.")
+                        st.error("Compte de démonstration indisponible.")
 
     # --- Connexion manuelle, pour montrer que l'authentification est reelle ---
     with st.expander("Se connecter avec un identifiant"):
@@ -721,10 +721,10 @@ def afficher_page_connexion():
                 connecter(utilisateur_trouve)
 
     st.markdown(
-        '<p class="kp-login-pied">Les mots de passe sont stockes haches '
-        '(PBKDF2-SHA256, 100 000 iterations) avec un sel propre a chaque compte. '
+        '<p class="kp-login-pied">Les mots de passe sont stockés hachés '
+        '(PBKDF2-SHA256, 100 000 itérations) avec un sel propre à chaque compte. '
         'Les identifiants ci-dessus sont publics parce qu\'il s\'agit d\'une '
-        'demonstration sur donnees simulees.</p>',
+        'démonstration sur données simulees.</p>',
         unsafe_allow_html=True,
     )
 
@@ -758,7 +758,7 @@ st.markdown(
             <span class="tt-op-sep"></span>
             {logo_html()}
         </div>
-        <p class="tt-sub">Piloter les ventes par la donnee &middot; suivi, prevision et alertes &middot; Tunisie Telecom</p>
+        <p class="tt-sub">Piloter les ventes par la donnée &middot; suivi, prévision et alertes &middot; Tunisie Télécom</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -780,8 +780,8 @@ objectifs = bd.lire_objectifs()
 # Un import a-t-il deja eu lieu pendant cette session ? (sert a l'affichage)
 mode_reel = "dernier_import" in st.session_state
 source_donnees = (
-    st.session_state.get("dernier_import", "base de donnees (data/kpilot.db)")
-    if mode_reel else "base de donnees (data/kpilot.db)"
+    st.session_state.get("dernier_import", "base de données (data/kpilot.db)")
+    if mode_reel else "base de données (data/kpilot.db)"
 )
 
 prevision = charger_si_existe("data/prevision.csv")
@@ -792,6 +792,14 @@ validation = charger_si_existe("data/validation_modele.csv")
 # Preparation des ventes (dates + annee/mois) et calcul des KPI,
 # via le module partage kpi.py (meme logique que calcul_kpi.py).
 ventes = preparer_ventes(ventes)
+
+# Un objectif porte sur un mois ENTIER. Si le fichier importe ne couvre que
+# quelques journees, le mois correspondant serait malgre tout compare a
+# l'objectif complet : le taux s'effondrerait et l'application annoncerait un
+# retard qui n'existe pas. On ecarte donc les mois manifestement partiels, et
+# on le signale plus bas a l'utilisateur.
+ventes, mois_ecartes = separer_mois_complets(ventes)
+
 kpi = calculer_kpi(ventes, objectifs)
 
 # ============================================================================
@@ -813,10 +821,10 @@ with st.sidebar.expander("Mon compte"):
     st.markdown(f"**Nom** : {utilisateur['nom_complet']}")
     st.markdown("**Role** : " + LIBELLE_ROLE.get(role_utilisateur, role_utilisateur))
     st.caption(
-        f"Acces autorise : {len(onglets_autorises)} onglets sur "
+        f"Accès autorise : {len(onglets_autorises)} onglets sur "
         f"{max(len(liste) for liste in ONGLETS_PAR_ROLE.values())}."
         + ("" if "Saisie / Import" in onglets_autorises else
-           " L'import des realisations est reserve au responsable commercial.")
+           " L'import des réalisations est réservé au responsable commercial.")
     )
 
     st.markdown("**Changer mon mot de passe**")
@@ -840,11 +848,11 @@ with st.sidebar.expander("Mon compte"):
             (st.success if succes else st.error)(message)
             if succes:
                 st.caption(
-                    "Il servira a votre prochaine connexion. "
-                    "Le mot de passe de demonstration ne fonctionne plus."
+                    "Il servira à votre prochaine connexion. "
+                    "Le mot de passe de démonstration ne fonctionne plus."
                 )
 
-if st.sidebar.button("Se deconnecter", width="stretch"):
+if st.sidebar.button("Se déconnecter", width="stretch"):
     # On vide la session : l'utilisateur revient a l'ecran de connexion.
     st.session_state.clear()
     st.rerun()
@@ -862,12 +870,12 @@ st.sidebar.divider()
 # COTE A COTE. Celle qui est active se voit, celles qui ne le sont pas aussi.
 categories = sorted(kpi["categorie"].unique())
 
-st.markdown('<div class="kp-filtres-titre">Perimetre analyse</div>',
+st.markdown('<div class="kp-filtres-titre">Périmètre analysé</div>',
             unsafe_allow_html=True)
 colonne_categorie, colonne_annee = st.columns([3, 1])
 
 categorie_choisie = colonne_categorie.segmented_control(
-    "Categorie", categories, default=categories[0],
+    "Catégorie", categories, default=categories[0],
     label_visibility="collapsed", key="filtre_categorie",
 )
 # segmented_control renvoie None si l'utilisateur reclique sur le bouton deja
@@ -880,8 +888,22 @@ annees_disponibles = sorted(
     kpi.loc[kpi["categorie"] == categorie_choisie, "annee"].unique()
 )
 annee_choisie = colonne_annee.selectbox(
-    "Annee", annees_disponibles, label_visibility="collapsed",
+    "Année", annees_disponibles, label_visibility="collapsed",
 )
+
+# Message affiche lorsqu'un mois a ete ecarte parce qu'il etait trop partiel.
+if mois_ecartes:
+    detail = ", ".join(
+        f"{d['mois']:02d}/{d['annee']} ({d['jours_presents']} jour(s) sur "
+        f"{d['jours_du_mois']})"
+        for d in mois_ecartes
+    )
+    st.warning(
+        f"**Mois incomplet écarté du calcul : {detail}.** "
+        "Un objectif porte sur un mois entier : comparer quelques journées à "
+        "un objectif complet ferait apparaître un retard fictif. Les ventes "
+        "restent visibles dans les onglets de détail."
+    )
 
 kpi_filtre = kpi[(kpi["categorie"] == categorie_choisie) & (kpi["annee"] == annee_choisie)]
 kpi_annee = kpi[kpi["annee"] == annee_choisie]
@@ -968,6 +990,11 @@ def offre_qui_decroche(categorie, annee, mois_reference):
     dernier_mois = lignes[lignes["mois"] == mois_reference]
     if dernier_mois.empty or dernier_mois["quantite"].sum() == 0:
         return None
+    # On ne se prononce pas sur un echantillon trop mince : deux ou trois
+    # lignes suffiraient a produire une variation spectaculaire (+1900 %) mais
+    # denuee de sens. On exige au moins la moitie des journees du mois.
+    if dernier_mois["date"].nunique() < 15:
+        return None
     part_dernier = dernier_mois.groupby("sous_categorie")["quantite"].sum() / dernier_mois["quantite"].sum()
 
     # Protection : on ne divise que par les parts moyennes non nulles
@@ -989,7 +1016,7 @@ def ecran_responsable():
 
     if len(en_retard) == 0:
         bandeau("ok", "Situation",
-                f"Toutes les categories sont au niveau de leur objectif cumule {annee_choisie}.",
+                f"Toutes les catégories sont au niveau de leur objectif cumulé {annee_choisie}.",
                 "Rien ne demande d'action corrective a ce stade.")
         rythme_requis, categorie_prio = 0, None
     else:
@@ -1001,17 +1028,17 @@ def ecran_responsable():
         rythme_requis = -(-manque // mois_restants) if mois_restants else manque
         bandeau(
             "alerte" if prioritaire["taux"] < 90 else "attention",
-            "Priorite",
+            "Priorité",
             f"{categorie_prio} : il manque <strong>{manque:,}</strong> ventes "
             f"sur l'objectif {annee_choisie}.".replace(",", " "),
             f"Soit {rythme_requis} ventes par mois sur les {mois_restants} mois restants."
-            if mois_restants else "L'annee est terminee : l'ecart ne peut plus etre rattrape.",
+            if mois_restants else "L'année est terminée : l'écart ne peut plus etre rattrape.",
         )
 
     # --- Trois indicateurs qui disent QUOI FAIRE (et non ou l'on en est) ---
     col_a, col_b, col_c = st.columns(3)
     col_a.markdown(
-        carte_kpi("Rythme a tenir",
+        carte_kpi("Rythme à tenir",
                   f"{rythme_requis}",
                   "ventes / mois pour rattraper" if rythme_requis else "objectif deja tenu",
                   couleur=ROUGE if rythme_requis else VERT, icone="objectif"),
@@ -1023,14 +1050,14 @@ def ecran_responsable():
     if decrochage:
         offre, evolution = decrochage
         col_b.markdown(
-            carte_kpi("Offre qui decroche", offre,
+            carte_kpi("Offre qui décroche", offre,
                       f"{evolution:+.0f} % de part le dernier mois",
                       couleur=ORANGE, icone="ventes"),
             unsafe_allow_html=True,
         )
     else:
         col_b.markdown(
-            carte_kpi("Offre qui decroche", "-", "donnees insuffisantes",
+            carte_kpi("Offre qui décroche", "-", "données insuffisantes",
                       couleur=GRIS, icone="ventes"),
             unsafe_allow_html=True,
         )
@@ -1044,7 +1071,7 @@ def ecran_responsable():
 
     # --- Etat categorie par categorie ---
     st.write("")
-    st.subheader(f"Etat des categories - cumul {annee_choisie}")
+    st.subheader(f"État des catégories - cumul {annee_choisie}")
     for _, ligne_alerte in alertes.iterrows():
         manque = int(ligne_alerte["manque"])
         taux = ligne_alerte["taux"]
@@ -1059,16 +1086,16 @@ def ecran_responsable():
             st.error(f"{nom} : en retard ({taux} %) - il manque {manque} ventes.")
 
     st.caption(
-        "Le fichier des realisations du mois se depose dans l'onglet "
-        "**Saisie / Import** : les indicateurs ci-dessus se recalculent aussitot."
+        "Le fichier des réalisations du mois se dépose dans l'onglet "
+        "**Saisie / Import** : les indicateurs ci-dessus se recalculent aussitôt."
     )
 
 
 def ecran_analyste():
     """Accueil de l'ANALYSTE / DIRECTION : ou atterrit-on, et est-ce fiable."""
     titre_ecran(
-        "Note de synthese",
-        f"Projection de fin d'annee {annee_choisie}, fiabilite du modele et lecture regionale.",
+        "Note de synthèse",
+        f"Projection de fin d'année {annee_choisie}, fiabilité du modèle et lecture régionale.",
     )
 
     # --- Atterrissage annuel, toutes categories confondues ---
@@ -1085,15 +1112,15 @@ def ecran_analyste():
         estime, vise, taux_atterrissage = atterrissage
         ton = "ok" if taux_atterrissage >= 100 else ("attention" if taux_atterrissage >= 90 else "alerte")
         bandeau(
-            ton, "Atterrissage projete",
+            ton, "Atterrissage projeté",
             f"<strong>{estime:,}</strong> ventes attendues fin {annee_choisie} "
-            f"pour {vise:,} visees, soit <strong>{taux_atterrissage} %</strong>.".replace(",", " "),
-            f"Ecart projete : {vise - estime:,} ventes.".replace(",", " ")
-            if vise > estime else "Objectif annuel projete comme atteint.",
+            f"pour {vise:,} visées, soit <strong>{taux_atterrissage} %</strong>.".replace(",", " "),
+            f"Écart projeté : {vise - estime:,} ventes.".replace(",", " ")
+            if vise > estime else "Objectif annuel projeté comme atteint.",
         )
     else:
-        bandeau("attention", "Atterrissage projete",
-                "Projection indisponible pour cette annee.",
+        bandeau("attention", "Atterrissage projeté",
+                "Projection indisponible pour cette année.",
                 "Lancer python prediction_atteinte.py pour la produire.")
 
     # --- Trois indicateurs de DECISION ---
@@ -1103,14 +1130,14 @@ def ecran_analyste():
         mape = validation["erreur_pct"].mean()
         fiabilite = round(100 - mape, 1)
         col_a.markdown(
-            carte_kpi("Fiabilite du modele", f"{fiabilite} %",
+            carte_kpi("Fiabilité du modèle", f"{fiabilite} %",
                       f"erreur moyenne {mape:.1f} % (backtesting)",
                       couleur=couleur_selon_taux(fiabilite), icone="taux"),
             unsafe_allow_html=True,
         )
     else:
         col_a.markdown(
-            carte_kpi("Fiabilite du modele", "-", "validation non calculee",
+            carte_kpi("Fiabilité du modèle", "-", "validation non calculee",
                       couleur=GRIS, icone="taux"),
             unsafe_allow_html=True,
         )
@@ -1120,14 +1147,14 @@ def ecran_analyste():
         par_region = ventes_annee.groupby("region")["quantite"].sum().sort_values(ascending=False)
         part = par_region.iloc[0] / par_region.sum() * 100
         col_b.markdown(
-            carte_kpi("Region motrice", par_region.index[0],
+            carte_kpi("Région motrice", par_region.index[0],
                       f"{part:.1f} % du volume national",
                       couleur=BLEU, icone="ventes"),
             unsafe_allow_html=True,
         )
     else:
         col_b.markdown(
-            carte_kpi("Region motrice", "-", "pas de donnee regionale",
+            carte_kpi("Région motrice", "-", "pas de donnée régionale",
                       couleur=GRIS, icone="ventes"),
             unsafe_allow_html=True,
         )
@@ -1156,20 +1183,20 @@ def ecran_analyste():
         lignes_annee = atteinte[atteinte["annee"] == annee_choisie]
         if len(lignes_annee):
             st.write("")
-            st.subheader(f"Projection par categorie - {annee_choisie}")
+            st.subheader(f"Projection par catégorie - {annee_choisie}")
             tableau = lignes_annee[[
                 "categorie", "realise_connu", "prevu_restant",
                 "total_estime", "objectif_annuel", "taux_estime_pct",
             ]].rename(columns={
-                "categorie": "Categorie", "realise_connu": "Realise connu",
-                "prevu_restant": "Prevu restant", "total_estime": "Total estime",
-                "objectif_annuel": "Objectif annuel", "taux_estime_pct": "Taux estime (%)",
+                "categorie": "Catégorie", "realise_connu": "Réalisé connu",
+                "prevu_restant": "Prévu restant", "total_estime": "Total estimé",
+                "objectif_annuel": "Objectif annuel", "taux_estime_pct": "Taux estimé (%)",
             })
             st.dataframe(tableau, width="stretch", hide_index=True)
 
     st.caption(
-        "Les onglets ci-dessous permettent d'entrer dans le detail : comparaison "
-        "des categories, analyse regionale et prevision mois par mois."
+        "Les onglets ci-dessous permettent d'entrer dans le détail : comparaison "
+        "des catégories, analyse régionale et prévision mois par mois."
     )
 
 
@@ -1183,7 +1210,7 @@ else:
 st.write("")
 colonne_csv, colonne_pdf = st.columns(2)
 colonne_csv.download_button(
-    label="Exporter le KPI filtre (CSV)",
+    label="Exporter le KPI filtré (CSV)",
     data=kpi_filtre.to_csv(index=False).encode("utf-8"),
     file_name=f"kpi_{categorie_choisie}_{annee_choisie}.csv",
     mime="text/csv",
@@ -1216,10 +1243,10 @@ onglets = dict(zip(onglets_autorises, liste_onglets))
 # cet onglet n'existe tout simplement pas (controle d'acces par role).
 if "Saisie / Import" in onglets:
     with onglets["Saisie / Import"]:
-        st.subheader("Import des realisations du mois")
+        st.subheader("Import des réalisations du mois")
         st.write(
-            "Chaque mois, deposez ici le fichier des ventes reelles (Excel .xlsx ou "
-            "CSV). Les lignes sont **enregistrees dans la base de donnees** et les "
+            "Chaque mois, déposez ici le fichier des ventes réelles (Excel .xlsx ou "
+            "CSV). Les lignes sont **enregistrées dans la base de données** et les "
             "KPI sont recalcules immediatement."
         )
 
@@ -1250,7 +1277,7 @@ if "Saisie / Import" in onglets:
             }
         )
         st.download_button(
-            "Telecharger un modele vierge (CSV)",
+            "Télécharger un modèle vierge (CSV)",
             data=modele.to_csv(index=False).encode("utf-8"),
             file_name="modele_realisations.csv",
             mime="text/csv",
@@ -1265,7 +1292,7 @@ if "Saisie / Import" in onglets:
         if "uploader_key" not in st.session_state:
             st.session_state["uploader_key"] = 0
         fichier = st.file_uploader(
-            "Deposer le fichier des realisations",
+            "Déposer le fichier des réalisations",
             type=["xlsx", "xls", "csv"],
             key=f"upload_{st.session_state['uploader_key']}",
         )
@@ -1281,7 +1308,7 @@ if "Saisie / Import" in onglets:
                     st.error(message)
                 else:
                     st.success(message)
-                    st.caption("Apercu des premieres lignes du fichier importe :")
+                    st.caption("Aperçu des premières lignes du fichier importé :")
                     st.dataframe(df_importe.head(), width="stretch")
                     # On ecrit dans la base, une seule fois par fichier.
                     # Le test sur le nom evite une boucle de reexecution infinie :
@@ -1310,7 +1337,7 @@ if "Saisie / Import" in onglets:
 
         # Bouton pour remettre la base dans son etat de demonstration
         st.divider()
-        if st.button("Reinitialiser la base (donnees de demonstration)"):
+        if st.button("Réinitialiser la base (données de démonstration)"):
             bd.reinitialiser_depuis_csv()
             st.session_state.pop("nom_fichier", None)
             st.session_state.pop("dernier_import", None)
@@ -1332,18 +1359,18 @@ with onglets["Tableau & mensuel"]:
         value_name="valeur",
     )
     kpi_graphique["type"] = kpi_graphique["type"].replace(
-        {"ventes_reelles": "Realise", "objectif_mensuel": "Objectif"}
+        {"ventes_reelles": "Réalisé", "objectif_mensuel": "Objectif"}
     )
 
-    st.subheader(f"Realise vs Objectif par mois - {categorie_choisie} {annee_choisie}")
+    st.subheader(f"Réalisé vs Objectif par mois - {categorie_choisie} {annee_choisie}")
     figure = px.bar(
         kpi_graphique,
         x="mois",
         y="valeur",
         color="type",
         barmode="group",
-        color_discrete_map={"Realise": BLEU, "Objectif": GRIS},
-        labels={"mois": "Mois", "valeur": "Quantite", "type": "Legende"},
+        color_discrete_map={"Réalisé": BLEU, "Objectif": GRIS},
+        labels={"mois": "Mois", "valeur": "Quantité", "type": "Légende"},
     )
     figure.update_layout(template="plotly_white")
     st.plotly_chart(figure, width="stretch")
@@ -1379,7 +1406,7 @@ with onglets["Tableau & mensuel"]:
     st.plotly_chart(figure_jours, width="stretch")
 
 # --- Onglet 2 : suivi cumule ---
-with onglets["Suivi cumule"]:
+with onglets["Suivi cumulé"]:
     kpi_cumule = kpi_filtre.sort_values("mois").copy()
     kpi_cumule["ventes_cumulees"] = kpi_cumule["ventes_reelles"].cumsum()
     kpi_cumule["objectif_cumule"] = kpi_cumule["objectif_mensuel"].cumsum()
@@ -1391,29 +1418,29 @@ with onglets["Suivi cumule"]:
         value_name="valeur",
     )
     kpi_cumule_graphique["type"] = kpi_cumule_graphique["type"].replace(
-        {"ventes_cumulees": "Realise cumule", "objectif_cumule": "Objectif cumule"}
+        {"ventes_cumulees": "Réalisé cumulé", "objectif_cumule": "Objectif cumulé"}
     )
 
-    st.subheader(f"Suivi cumule - {categorie_choisie} {annee_choisie}")
+    st.subheader(f"Suivi cumulé - {categorie_choisie} {annee_choisie}")
     figure_cumule = px.line(
         kpi_cumule_graphique,
         x="mois",
         y="valeur",
         color="type",
         markers=True,
-        color_discrete_map={"Realise cumule": BLEU, "Objectif cumule": ROUGE},
-        labels={"mois": "Mois", "valeur": "Quantite cumulee", "type": "Legende"},
+        color_discrete_map={"Réalisé cumulé": BLEU, "Objectif cumulé": ROUGE},
+        labels={"mois": "Mois", "valeur": "Quantité cumulée", "type": "Légende"},
     )
     figure_cumule.update_layout(template="plotly_white")
     st.plotly_chart(figure_cumule, width="stretch")
 
 # --- Onglet 3 : detail par sous-categorie ---
-with onglets["Detail sous-categories"]:
+with onglets["Détail sous-catégories"]:
     sous_categories_disponibles = sorted(
         ventes.loc[ventes["categorie"] == categorie_choisie, "sous_categorie"].unique()
     )
     sous_categories_choisies = st.multiselect(
-        "Filtrer les sous-categories",
+        "Filtrer les sous-catégories",
         sous_categories_disponibles,
         default=sous_categories_disponibles,
     )
@@ -1429,21 +1456,21 @@ with onglets["Detail sous-categories"]:
         .reset_index()
     )
 
-    st.subheader(f"Ventes reelles par sous-categorie - {categorie_choisie} {annee_choisie}")
+    st.subheader(f"Ventes réelles par sous-catégorie - {categorie_choisie} {annee_choisie}")
     figure_sous_categorie = px.bar(
         ventes_sous_categorie,
         x="mois",
         y="quantite",
         color="sous_categorie",
         barmode="group",
-        labels={"mois": "Mois", "quantite": "Quantite", "sous_categorie": "Sous-categorie"},
+        labels={"mois": "Mois", "quantite": "Quantité", "sous_categorie": "Sous-catégorie"},
     )
     figure_sous_categorie.update_layout(template="plotly_white")
     st.plotly_chart(figure_sous_categorie, width="stretch")
 
 # --- Onglet 4 : comparaison des categories ---
-with onglets["Comparaison categories"]:
-    st.subheader(f"Realise par categorie et par mois - {annee_choisie}")
+with onglets["Comparaison catégories"]:
+    st.subheader(f"Réalisé par catégorie et par mois - {annee_choisie}")
     figure_comparaison = px.bar(
         kpi_annee,
         x="mois",
@@ -1451,12 +1478,12 @@ with onglets["Comparaison categories"]:
         color="categorie",
         barmode="group",
         color_discrete_map={"Internet Fixe": BLEU, "Mobile": NUIT},
-        labels={"mois": "Mois", "ventes_reelles": "Quantite", "categorie": "Categorie"},
+        labels={"mois": "Mois", "ventes_reelles": "Quantité", "categorie": "Catégorie"},
     )
     figure_comparaison.update_layout(template="plotly_white")
     st.plotly_chart(figure_comparaison, width="stretch")
 
-    st.subheader(f"Taux de realisation par categorie et par mois - {annee_choisie}")
+    st.subheader(f"Taux de réalisation par catégorie et par mois - {annee_choisie}")
     figure_taux_comparaison = px.line(
         kpi_annee,
         x="mois",
@@ -1464,7 +1491,7 @@ with onglets["Comparaison categories"]:
         color="categorie",
         markers=True,
         color_discrete_map={"Internet Fixe": BLEU, "Mobile": NUIT},
-        labels={"mois": "Mois", "taux_atteinte_pct": "Taux de realisation (%)", "categorie": "Categorie"},
+        labels={"mois": "Mois", "taux_atteinte_pct": "Taux de réalisation (%)", "categorie": "Catégorie"},
     )
     figure_taux_comparaison.update_layout(template="plotly_white")
     st.plotly_chart(figure_taux_comparaison, width="stretch")
@@ -1472,7 +1499,7 @@ with onglets["Comparaison categories"]:
     # --- Evolution pluriannuelle (a periode comparable : 1er semestre) ---
     # 2026 est incomplet (jan-juin), donc on compare le MEME semestre chaque
     # annee pour eviter tout biais. Montre si les ventes progressent.
-    st.subheader("Evolution des ventes du 1er semestre (janvier a juin), par annee")
+    st.subheader("Évolution des ventes du 1er semestre (janvier a juin), par année")
     premier_semestre = ventes[ventes["mois"].between(1, 6)]
     evolution = (
         premier_semestre.groupby(["annee", "categorie"])["quantite"].sum().reset_index()
@@ -1484,18 +1511,18 @@ with onglets["Comparaison categories"]:
         color="categorie",
         markers=True,
         color_discrete_map={"Internet Fixe": BLEU, "Mobile": NUIT},
-        labels={"annee": "Annee", "quantite": "Ventes (jan-juin)", "categorie": "Categorie"},
+        labels={"annee": "Année", "quantite": "Ventes (jan-juin)", "categorie": "Catégorie"},
     )
     figure_evolution.update_layout(template="plotly_white")
     figure_evolution.update_xaxes(dtick=1)  # afficher des annees entieres
     st.plotly_chart(figure_evolution, width="stretch")
     st.caption(
-        "Comparaison a periode identique (janvier-juin) pour chaque annee, "
-        "afin d'eviter le biais du 2026 incomplet."
+        "Comparaison a période identique (janvier-juin) pour chaque année, "
+        "afin d'éviter le biais du 2026 incomplet."
     )
 
 # --- Onglet 5 : analyse regionale ---
-with onglets["Analyse regionale"]:
+with onglets["Analyse régionale"]:
     # Les objectifs n'existent pas au niveau region (comme pour les
     # sous-categories) : on montre donc uniquement le realise par region.
     ventes_region_annee = ventes[
@@ -1515,14 +1542,14 @@ with onglets["Analyse regionale"]:
         region_top = ventes_par_region.iloc[-1]
         col_a, col_b = st.columns(2)
         col_a.markdown(
-            carte_kpi("Region la plus performante", region_top["region"], icone="ventes"),
+            carte_kpi("Région la plus performante", region_top["region"], icone="ventes"),
             unsafe_allow_html=True,
         )
         col_b.markdown(
             carte_kpi(
-                "Ventes de cette region",
+                "Ventes de cette région",
                 f"{int(region_top['quantite']):,}".replace(",", " "),
-                "sur la periode",
+                "sur la période",
                 couleur=GRIS,
                 icone="annuel",
             ),
@@ -1530,7 +1557,7 @@ with onglets["Analyse regionale"]:
         )
         st.write("")
 
-    st.subheader(f"Ventes par region - {categorie_choisie} {annee_choisie}")
+    st.subheader(f"Ventes par région - {categorie_choisie} {annee_choisie}")
     figure_region = px.bar(
         ventes_par_region,
         x="quantite",
@@ -1543,7 +1570,7 @@ with onglets["Analyse regionale"]:
     st.plotly_chart(figure_region, width="stretch")
 
     # --- Repartition mensuelle empilee par region ---
-    st.subheader(f"Repartition mensuelle par region - {annee_choisie}")
+    st.subheader(f"Répartition mensuelle par région - {annee_choisie}")
     ventes_region_mois = (
         ventes_region_annee.groupby(["mois", "region"])["quantite"].sum().reset_index()
     )
@@ -1553,7 +1580,7 @@ with onglets["Analyse regionale"]:
         y="quantite",
         color="region",
         barmode="stack",
-        labels={"mois": "Mois", "quantite": "Ventes", "region": "Region"},
+        labels={"mois": "Mois", "quantite": "Ventes", "region": "Région"},
     )
     figure_region_mois.update_layout(template="plotly_white")
     st.plotly_chart(figure_region_mois, width="stretch")
@@ -1562,7 +1589,7 @@ with onglets["Analyse regionale"]:
     # Tableau croise : regions en lignes, mois en colonnes, + une colonne Total.
     # Ce sont les ventes REELLEMENT realisees (les "realisations"), declinees
     # par region comme demande.
-    st.subheader(f"Tableau des realisations par region - {categorie_choisie} {annee_choisie}")
+    st.subheader(f"Tableau des réalisations par région - {categorie_choisie} {annee_choisie}")
     tableau_realisations = ventes_region_annee.pivot_table(
         index="region", columns="mois", values="quantite", aggfunc="sum", fill_value=0
     )
@@ -1580,22 +1607,22 @@ with onglets["Analyse regionale"]:
         .encode("utf-8")
     )
     st.download_button(
-        "Telecharger les realisations par region (CSV)",
+        "Télécharger les réalisations par région (CSV)",
         data=realisations_csv,
         file_name=f"realisations_{categorie_choisie}_{annee_choisie}.csv",
         mime="text/csv",
     )
 
     st.caption(
-        "Note : la dimension regionale est simulee (ajoutee via ajouter_region.py) "
-        "pour demontrer la capacite d'analyse geographique."
+        "Note : la dimension régionale est simulée (ajoutee via ajouter_region.py) "
+        "pour démontrer la capacité d'analyse géographique."
     )
 
 # --- Onglet 6 : prevision + probabilite d'atteinte + anomalies ---
-with onglets["Prevision & alertes"]:
+with onglets["Prévision & alertes"]:
 
     # ===== A. Prevision Prophet =====
-    st.subheader(f"Prevision des ventes - {categorie_choisie}")
+    st.subheader(f"Prévision des ventes - {categorie_choisie}")
     if prevision is None:
         st.warning("Fichier data/prevision.csv absent. Lance d'abord : python forecast.py")
     else:
@@ -1632,16 +1659,16 @@ with onglets["Prevision & alertes"]:
         figure_prevision.add_trace(
             go.Scatter(
                 x=ventes_reelles_mois["date"], y=ventes_reelles_mois["quantite"],
-                mode="markers", marker=dict(color=NUIT, size=6), name="Ventes reelles",
+                mode="markers", marker=dict(color=NUIT, size=6), name="Ventes réelles",
             )
         )
         figure_prevision.update_layout(
-            template="plotly_white", xaxis_title="Mois", yaxis_title="Quantite mensuelle"
+            template="plotly_white", xaxis_title="Mois", yaxis_title="Quantité mensuelle"
         )
         st.plotly_chart(figure_prevision, width="stretch")
         st.caption(
-            "Points bleu nuit = ventes reelles connues. Ligne bleue = prevision Prophet. "
-            "Zone bleue = incertitude du modele (intervalle de confiance)."
+            "Points bleu nuit = ventes réelles connues. Ligne bleue = prévision Prophet. "
+            "Zone bleue = incertitude du modèle (intervalle de confiance)."
         )
 
     # ===== B. Probabilite d'atteindre l'objectif annuel =====
@@ -1651,12 +1678,12 @@ with onglets["Prevision & alertes"]:
     else:
         atteinte_categorie = atteinte[atteinte["categorie"] == categorie_choisie]
         for _, ligne in atteinte_categorie.iterrows():
-            st.markdown(f"**Annee {int(ligne['annee'])}**")
+            st.markdown(f"**Année {int(ligne['annee'])}**")
             couleur_ligne = couleur_selon_taux(ligne["taux_estime_pct"])
             col1, col2, col3 = st.columns(3)
             col1.markdown(
                 carte_kpi(
-                    "Total estime",
+                    "Total estimé",
                     f"{int(ligne['total_estime']):,}".replace(",", " "),
                     icone="annuel",
                 ),
@@ -1673,7 +1700,7 @@ with onglets["Prevision & alertes"]:
             )
             col3.markdown(
                 carte_kpi(
-                    "Taux estime",
+                    "Taux estimé",
                     f"{ligne['taux_estime_pct']} %",
                     f"proba : {ligne['probabilite_atteinte_pct']} %",
                     couleur=couleur_ligne,
@@ -1685,7 +1712,7 @@ with onglets["Prevision & alertes"]:
             st.write("")
             # Jauge visuelle du taux d'atteinte annuel (compteur)
             st.plotly_chart(
-                jauge_taux(ligne["taux_estime_pct"], f"Taux d'atteinte estime - {int(ligne['annee'])}"),
+                jauge_taux(ligne["taux_estime_pct"], f"Taux d'atteinte estimé - {int(ligne['annee'])}"),
                 width="stretch",
             )
             if ligne["ecart_a_combler"] > 0:
@@ -1706,12 +1733,12 @@ with onglets["Prevision & alertes"]:
             # TAUX estime, qui dit de combien on s'approche de la cible.
             if ligne["probabilite_atteinte_pct"] in (0.0, 100.0):
                 st.caption(
-                    "Lecture : l'historique simule est tres regulier, donc la fourchette "
-                    "d'incertitude de Prophet est etroite et la probabilite bascule vers "
+                    "Lecture : l'historique simulé est très régulier, donc la fourchette "
+                    "d'incertitude de Prophet est étroite et la probabilité bascule vers "
                     "0 % ou 100 % des que l'objectif sort de cette fourchette. L'indicateur "
                     f"a retenir ici est le taux estime ({ligne['taux_estime_pct']} %). "
-                    "Sur des ventes reelles, plus irregulieres, la fourchette s'elargit et "
-                    "la probabilite redevient nuancee."
+                    "Sur des ventes réelles, plus irrégulières, la fourchette s'élargit et "
+                    "la probabilité redevient nuancée."
                 )
 
     # ===== C. Anomalies detectees =====
@@ -1720,14 +1747,14 @@ with onglets["Prevision & alertes"]:
         st.warning("Fichier data/anomalies.csv absent. Lance d'abord : python anomalies.py")
     else:
         anomalies_categorie = anomalies[anomalies["categorie"] == categorie_choisie]
-        st.write(f"{len(anomalies_categorie)} anomalie(s) detectee(s) pour cette categorie.")
+        st.write(f"{len(anomalies_categorie)} anomalie(s) détectée(s) pour cette catégorie.")
         st.dataframe(anomalies_categorie, width="stretch")
 
-    # ===== D. Fiabilite du modele (validation retrospective / backtesting) =====
+    # ===== D. Fiabilité du modèle (validation retrospective / backtesting) =====
     # But : PROUVER que la prevision est credible. Le modele a ete entraine
     # uniquement sur 2024-2025 (validation_modele.py), puis on a compare ses
     # predictions aux VRAIES ventes de jan-juin 2026 (qu'il n'avait jamais vues).
-    st.subheader(f"Fiabilite du modele - {categorie_choisie}")
+    st.subheader(f"Fiabilité du modèle - {categorie_choisie}")
     if validation is None:
         st.warning("Fichier data/validation_modele.csv absent. Lance d'abord : python validation_modele.py")
     else:
@@ -1756,7 +1783,7 @@ with onglets["Prevision & alertes"]:
             carte_kpi(
                 "Erreur moyenne (MAPE)",
                 f"{mape:.1f} %",
-                "ecart moyen entre prevu et reel",
+                "écart moyen entre prévu et réel",
                 couleur=GRIS,
                 icone="taux",
             ),
@@ -1764,7 +1791,7 @@ with onglets["Prevision & alertes"]:
         )
         col_v3.markdown(
             carte_kpi(
-                "Fiabilite estimee",
+                "Fiabilité estimée",
                 f"{fiabilite:.1f} %",
                 "100 - MAPE",
                 couleur=couleur_fiab,
@@ -1775,19 +1802,19 @@ with onglets["Prevision & alertes"]:
         )
         st.write("")
 
-        # Graphique : ventes reelles vs ventes prevues sur la periode de test
+        # Graphique : ventes reelles vs ventes prevues sur la période de test
         figure_validation = go.Figure()
         figure_validation.add_trace(
             go.Scatter(
                 x=validation_categorie["date"], y=validation_categorie["ventes_reelles"],
-                mode="lines+markers", line=dict(color=NUIT, width=2), name="Ventes reelles",
+                mode="lines+markers", line=dict(color=NUIT, width=2), name="Ventes réelles",
             )
         )
         figure_validation.add_trace(
             go.Scatter(
                 x=validation_categorie["date"], y=validation_categorie["ventes_prevues"],
                 mode="lines+markers", line=dict(color=BLEU, width=2, dash="dash"),
-                name="Ventes prevues par le modele",
+                name="Ventes prévues par le modèle",
             )
         )
         figure_validation.update_layout(
@@ -1796,8 +1823,8 @@ with onglets["Prevision & alertes"]:
         )
         st.plotly_chart(figure_validation, width="stretch")
         st.caption(
-            "Test du modele : entraine uniquement sur 2024-2025, il predit jan-juin 2026 "
-            "sans jamais avoir vu ces mois. On compare sa prevision (bleu pointille) aux "
-            "vraies ventes (bleu nuit). Plus les deux courbes sont proches, plus le modele "
+            "Test du modèle : entraîné uniquement sur 2024-2025, il prédit jan-juin 2026 "
+            "sans jamais avoir vu ces mois. On compare sa prévision (bleu pointille) aux "
+            "vraies ventes (bleu nuit). Plus les deux courbes sont proches, plus le modèle "
             "est fiable."
         )

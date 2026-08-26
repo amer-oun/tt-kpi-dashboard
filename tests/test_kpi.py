@@ -14,7 +14,7 @@ Lancer les tests :  pytest -v
 
 import pandas as pd
 
-from kpi import preparer_ventes, calculer_kpi
+from kpi import preparer_ventes, calculer_kpi, separer_mois_complets
 
 
 def test_preparer_ventes_ajoute_annee_et_mois():
@@ -117,3 +117,76 @@ def test_calculer_kpi_ignore_mois_sans_objectif():
     kpi = calculer_kpi(ventes, objectifs)
     # Assert : aucune ligne (les ventes de mars n'ont pas d'objectif)
     assert len(kpi) == 0
+
+
+# ============================================================================
+#  Detection des mois incomplets
+# ============================================================================
+def _ventes_du_mois(annee, mois, nb_jours, quantite=10):
+    """Fabrique nb_jours de ventes consecutives pour un mois donne."""
+    return pd.DataFrame({
+        "date": [f"{annee}-{mois:02d}-{jour:02d}" for jour in range(1, nb_jours + 1)],
+        "categorie": ["Mobile"] * nb_jours,
+        "sous_categorie": ["Data"] * nb_jours,
+        "quantite": [quantite] * nb_jours,
+        "region": ["Sfax"] * nb_jours,
+    })
+
+
+def test_un_mois_complet_est_conserve():
+    """Un mois couvrant toutes ses journees doit etre garde tel quel."""
+    # Arrange : janvier 2026 en entier (31 jours)
+    ventes = preparer_ventes(_ventes_du_mois(2026, 1, 31))
+    # Act
+    retenues, ecartes = separer_mois_complets(ventes)
+    # Assert
+    assert len(retenues) == 31
+    assert ecartes == []
+
+
+def test_un_mois_de_deux_journees_est_ecarte():
+    """C'est le cas du modele vierge reimporte : 2 lignes ne font pas un mois.
+
+    Sans cette protection, ces deux journees seraient comparees a l'objectif
+    mensuel ENTIER et feraient apparaitre un retard fictif.
+    """
+    # Arrange : janvier complet + un juillet de 2 journees seulement
+    ventes = pd.concat([_ventes_du_mois(2026, 1, 31), _ventes_du_mois(2026, 7, 2)])
+    ventes = preparer_ventes(ventes)
+    # Act
+    retenues, ecartes = separer_mois_complets(ventes)
+    # Assert : juillet a disparu, janvier est intact
+    assert set(retenues["mois"]) == {1}
+    assert len(ecartes) == 1
+    assert ecartes[0]["mois"] == 7
+    assert ecartes[0]["jours_presents"] == 2
+    assert ecartes[0]["jours_du_mois"] == 31
+
+
+def test_le_taux_n_est_pas_fausse_par_un_mois_partiel():
+    """Verification de bout en bout : le taux doit rester celui du mois complet."""
+    # Arrange : janvier complet (31 x 10 = 310 ventes) + juillet partiel
+    ventes = pd.concat([_ventes_du_mois(2026, 1, 31), _ventes_du_mois(2026, 7, 2)])
+    ventes = preparer_ventes(ventes)
+    objectifs = pd.DataFrame({
+        "categorie": ["Mobile", "Mobile"],
+        "annee": [2026, 2026],
+        "mois": [1, 7],
+        "objectif_mensuel": [310, 310],
+    })
+
+    # Act : avec la protection
+    retenues, _ = separer_mois_complets(ventes)
+    kpi = calculer_kpi(retenues, objectifs)
+
+    # Assert : un seul mois retenu, a 100 %
+    assert len(kpi) == 1
+    assert kpi.iloc[0]["taux_atteinte_pct"] == 100.0
+
+
+def test_un_mois_a_moitie_rempli_est_conserve():
+    """Le seuil est la moitie du mois : 16 jours sur 31 doivent passer."""
+    ventes = preparer_ventes(_ventes_du_mois(2026, 1, 16))
+    retenues, ecartes = separer_mois_complets(ventes)
+    assert ecartes == []
+    assert len(retenues) == 16
