@@ -206,7 +206,7 @@ def generer_rapport_pdf(categorie, annee, total_realise, total_objectif, taux_gl
 
     # Alertes par categorie
     pdf.set_font("Helvetica", "B", 13)
-    pdf.cell(0, 9, f"Alertes - situation cumulee {annee}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(0, 9, f"Alertes - situation cumulée {annee}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.set_font("Helvetica", "", 11)
     for _, a in alertes.iterrows():
         manque = int(a["objectif_mensuel"] - a["ventes_reelles"])
@@ -627,8 +627,8 @@ def afficher_page_connexion():
     st.markdown(
         f'<div class="kp-login-entete">{logo}'
         f'<h1 class="kp-login-titre">Pilotage des ventes</h1>'
-        f'<p class="kp-login-sous">Suivi, prevision et alertes sur les indicateurs '
-        f'commerciaux &middot; Tunisie Telecom</p></div>',
+        f'<p class="kp-login-sous">Suivi, prévision et alertes sur les indicateurs '
+        f'commerciaux &middot; Tunisie Télécom</p></div>',
         unsafe_allow_html=True,
     )
 
@@ -649,7 +649,7 @@ def afficher_page_connexion():
             "fonction": "Responsable commercial",
             "mission": "Suit les objectifs au quotidien, importe les réalisations "
                        "du mois et corrige les écarts.",
-            "acces": "7 onglets &middot; import des données autorise",
+            "acces": "7 onglets &middot; import des données autorisé",
             "couleur": BLEU,
             "couleur_texte": BLEU,
             "initiales": "SB",
@@ -724,7 +724,7 @@ def afficher_page_connexion():
         '<p class="kp-login-pied">Les mots de passe sont stockés hachés '
         '(PBKDF2-SHA256, 100 000 itérations) avec un sel propre à chaque compte. '
         'Les identifiants ci-dessus sont publics parce qu\'il s\'agit d\'une '
-        'démonstration sur données simulees.</p>',
+        'démonstration sur données simulées.</p>',
         unsafe_allow_html=True,
     )
 
@@ -821,7 +821,7 @@ with st.sidebar.expander("Mon compte"):
     st.markdown(f"**Nom** : {utilisateur['nom_complet']}")
     st.markdown("**Role** : " + LIBELLE_ROLE.get(role_utilisateur, role_utilisateur))
     st.caption(
-        f"Accès autorise : {len(onglets_autorises)} onglets sur "
+        f"Accès autorisé : {len(onglets_autorises)} onglets sur "
         f"{max(len(liste) for liste in ONGLETS_PAR_ROLE.values())}."
         + ("" if "Saisie / Import" in onglets_autorises else
            " L'import des réalisations est réservé au responsable commercial.")
@@ -1718,7 +1718,7 @@ with onglets["Prévision & alertes"]:
             if ligne["ecart_a_combler"] > 0:
                 st.info(
                     f"Il manque environ {int(ligne['ecart_a_combler'])} ventes pour atteindre l'objectif "
-                    f"(probabilite estimee : {ligne['probabilite_atteinte_pct']} %)."
+                    f"(probabilité estimée : {ligne['probabilite_atteinte_pct']} %)."
                 )
             else:
                 st.success(
@@ -1736,7 +1736,7 @@ with onglets["Prévision & alertes"]:
                     "Lecture : l'historique simulé est très régulier, donc la fourchette "
                     "d'incertitude de Prophet est étroite et la probabilité bascule vers "
                     "0 % ou 100 % des que l'objectif sort de cette fourchette. L'indicateur "
-                    f"a retenir ici est le taux estime ({ligne['taux_estime_pct']} %). "
+                    f"à retenir ici est le taux estimé ({ligne['taux_estime_pct']} %). "
                     "Sur des ventes réelles, plus irrégulières, la fourchette s'élargit et "
                     "la probabilité redevient nuancée."
                 )
