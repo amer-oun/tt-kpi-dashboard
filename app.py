@@ -313,32 +313,30 @@ st.markdown(
     .block-container {{ padding-top: 1.2rem; padding-bottom: 2.5rem; max-width: 1280px; }}
 
     /* ---------- Page de connexion ---------- */
-    .kp-login-entete {{ text-align: center; margin: 4vh 0 26px 0; }}
-    .kp-login-logo {{ height: 66px; }}
+    /* L'en-tete reste sobre : sur un ecran de connexion, l'utilisateur vient
+       entrer, pas admirer une banniere. Le titre est centre, mais les textes
+       de lecture sont alignes a gauche (un paragraphe centre se lit mal). */
+    .kp-login-entete {{ text-align: center; margin: 2.2rem 0 1.6rem 0; }}
+    .kp-login-logo {{ height: 42px; }}
     .kp-login-mot {{
-        font-size: 2rem; font-weight: 700; color: var(--tt-bleu); letter-spacing: -0.02em;
+        font-size: 1.5rem; font-weight: 700; color: var(--tt-bleu); letter-spacing: -0.02em;
     }}
     .kp-login-titre {{
-        color: var(--tt-nuit); margin: 16px 0 4px 0;
-        font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em;
+        color: var(--tt-nuit); margin: 12px 0 3px 0;
+        font-size: 1.4rem; font-weight: 700; letter-spacing: -0.015em;
         text-wrap: balance;
     }}
     .kp-login-sous {{
-        color: var(--tt-muet); margin: 0 auto; font-size: .95rem; max-width: 52ch;
+        color: var(--tt-muet); margin: 0 auto; font-size: .88rem; max-width: 60ch;
     }}
     .kp-login-consigne {{
-        color: var(--tt-nuit); font-size: .82rem; font-weight: 700;
-        text-transform: uppercase; letter-spacing: 1px;
-        margin: 0 0 12px 0; text-align: center;
+        color: var(--tt-muet); font-size: .88rem;
+        margin: 0 0 10px 2px; text-align: left;
     }}
 
-    /* Fiche d'un profil de demonstration. Bordure pleine + ombre discrete :
-       on ne cumule pas bordure marquee et ombre large. */
-    .kp-profil {{
-        background: var(--tt-surface); border: 1px solid var(--tt-bordure);
-        border-radius: 14px; padding: 18px 20px 14px 20px; height: 100%;
-        box-shadow: 0 1px 3px rgba(10,42,74,.06);
-    }}
+    /* Fiche d'un profil : le cadre est fourni par st.container(border=True),
+       on ne redessine donc pas de bordure ici (deux cadres imbriques seraient
+       toujours une erreur). */
     .kp-profil-tete {{ display: flex; align-items: center; gap: 12px; }}
     .kp-profil-pastille {{
         width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
@@ -351,16 +349,26 @@ st.markdown(
         font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .7px;
     }}
     .kp-profil-mission {{
-        color: var(--tt-texte); font-size: .89rem; line-height: 1.5;
-        margin: 13px 0 0 0;
+        color: var(--tt-texte); font-size: .88rem; line-height: 1.5;
+        margin: 12px 0 0 0;
     }}
-    .kp-profil-acces {{ color: var(--tt-muet); font-size: .82rem; margin: 8px 0 0 0; }}
+    .kp-profil-acces {{ color: var(--tt-muet); font-size: .8rem; margin: 7px 0 0 0; }}
     .kp-profil-ids {{
-        font-family: var(--mono); font-size: .84rem; color: var(--tt-nuit);
+        font-family: var(--mono); font-size: .82rem; color: var(--tt-nuit);
         background: #EEF3F9; border-radius: 8px; padding: 7px 10px;
-        margin: 12px 0 2px 0; text-align: center;
+        margin: 11px 0 12px 0;
     }}
-    .kp-profil-sep {{ color: var(--tt-muet); margin: 0 6px; }}
+    .kp-profil-sep {{ color: var(--tt-muet); margin: 0 8px; }}
+
+    /* Bouton principal : plein, aux couleurs de l'operateur. Sans cela les
+       deux boutons de demonstration ressemblent a des liens desactives. */
+    .stButton button[kind="primary"] {{
+        background: var(--tt-bleu) !important; color: #fff !important;
+        border: 1px solid var(--tt-bleu) !important; border-radius: 9px !important;
+        font-weight: 600 !important;
+        transition: filter .18s ease !important;
+    }}
+    .stButton button[kind="primary"]:hover {{ filter: brightness(1.08); }}
 
     /* Identite dans la barre laterale */
     .kp-qui {{ padding: 2px 0 6px 0; }}
@@ -371,8 +379,8 @@ st.markdown(
     }}
 
     .kp-login-pied {{
-        color: var(--tt-muet); font-size: .8rem; line-height: 1.6;
-        max-width: 74ch; margin: 26px auto 0 auto; text-align: center;
+        color: var(--tt-muet); font-size: .78rem; line-height: 1.55;
+        max-width: 78ch; margin: 18px 0 0 2px; text-align: left;
     }}
 
     /* ---------- Bandeau d'en-tete (masthead) ---------- */
@@ -607,7 +615,8 @@ def afficher_page_connexion():
     )
 
     st.markdown(
-        '<p class="kp-login-consigne">Choisissez un profil de demonstration</p>',
+        '<p class="kp-login-consigne">Deux profils de demonstration, '
+        'avec des droits differents.</p>',
         unsafe_allow_html=True,
     )
 
@@ -644,34 +653,35 @@ def afficher_page_connexion():
     colonnes = st.columns(2, gap="medium")
     for colonne, profil in zip(colonnes, profils):
         with colonne:
-            st.markdown(
-                f'<div class="kp-profil">'
-                f'  <div class="kp-profil-tete">'
-                f'    <span class="kp-profil-pastille" style="background:{profil["couleur"]};">'
-                f'{profil["initiales"]}</span>'
-                f'    <span class="kp-profil-identite">'
-                f'      <span class="kp-profil-nom">{profil["nom"]}</span>'
-                f'      <span class="kp-profil-fonction" style="color:{profil["couleur_texte"]};">'
-                f'{profil["fonction"]}</span>'
-                f'    </span>'
-                f'  </div>'
-                f'  <p class="kp-profil-mission">{profil["mission"]}</p>'
-                f'  <p class="kp-profil-acces">{profil["acces"]}</p>'
-                f'  <p class="kp-profil-ids">'
-                f'    <span>{profil["identifiant"]}</span>'
-                f'    <span class="kp-profil-sep">/</span>'
-                f'    <span>{profil["mot_de_passe"]}</span>'
-                f'  </p>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-            if st.button(f"Entrer comme {profil['fonction'].split(' -')[0].lower()}",
-                         key=f"demo_{profil['identifiant']}", width="stretch"):
-                trouve = bd.verifier_identifiants(profil["identifiant"], profil["mot_de_passe"])
-                if trouve:
-                    connecter(trouve)
-                else:
-                    st.error("Compte de demonstration indisponible.")
+            # st.container(border=True) dessine un VRAI cadre Streamlit. Le
+            # bouton place a l'interieur en fait partie : si l'on se contentait
+            # d'un <div> en HTML, le bouton s'afficherait en dessous du cadre,
+            # visuellement detache de la fiche qu'il accompagne.
+            with st.container(border=True):
+                st.markdown(
+                    f'<div class="kp-profil-tete">'
+                    f'<span class="kp-profil-pastille" style="background:{profil["couleur"]};">'
+                    f'{profil["initiales"]}</span>'
+                    f'<span class="kp-profil-identite">'
+                    f'<span class="kp-profil-nom">{profil["nom"]}</span>'
+                    f'<span class="kp-profil-fonction" style="color:{profil["couleur_texte"]};">'
+                    f'{profil["fonction"]}</span>'
+                    f'</span></div>'
+                    f'<p class="kp-profil-mission">{profil["mission"]}</p>'
+                    f'<p class="kp-profil-acces">{profil["acces"]}</p>'
+                    f'<p class="kp-profil-ids">{profil["identifiant"]}'
+                    f'<span class="kp-profil-sep">/</span>{profil["mot_de_passe"]}</p>',
+                    unsafe_allow_html=True,
+                )
+                if st.button(f"Entrer comme {profil['nom'].split()[0]}",
+                             key=f"demo_{profil['identifiant']}",
+                             width="stretch", type="primary"):
+                    trouve = bd.verifier_identifiants(profil["identifiant"],
+                                                      profil["mot_de_passe"])
+                    if trouve:
+                        connecter(trouve)
+                    else:
+                        st.error("Compte de demonstration indisponible.")
 
     # --- Connexion manuelle, pour montrer que l'authentification est reelle ---
     with st.expander("Se connecter avec un identifiant"):
