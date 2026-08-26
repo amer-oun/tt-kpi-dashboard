@@ -22,6 +22,7 @@ Rapport_PFE.lol
 generer_figures.py
 generer_figure_bdd.py
 generer_figures_planning.py
+generer_figures_gestion.py
 sauvegardes/
 
 # Figures et logos du rapport (personnels, non utilises par l'app)
