@@ -1006,33 +1006,39 @@ def offre_qui_decroche(categorie, annee, mois_reference):
 
 
 def ecran_responsable():
-    """Accueil du RESPONSABLE COMMERCIAL : ou agir, et a quel rythme."""
+    """Accueil du RESPONSABLE COMMERCIAL : ou agir, et a quel rythme.
+
+    Tout ce qui suit porte sur la CATEGORIE CHOISIE en haut de la page, sauf le
+    dernier bloc, qui compare les categories entre elles et le dit dans son titre.
+    """
     titre_ecran(
         "Poste de pilotage",
-        f"Ce qu'il faut regarder aujourd'hui pour tenir les objectifs {annee_choisie}.",
+        f"{categorie_choisie} : ce qu'il faut regarder aujourd'hui pour tenir "
+        f"les objectifs {annee_choisie}.",
     )
 
-    en_retard = alertes[alertes["manque"] > 0].sort_values("manque", ascending=False)
+    # Situation de la seule categorie choisie
+    ligne = alertes[alertes["categorie"] == categorie_choisie]
+    manque = int(ligne["manque"].iloc[0]) if len(ligne) else 0
+    taux = ligne["taux"].iloc[0] if len(ligne) else None
 
-    if len(en_retard) == 0:
+    if manque <= 0:
         bandeau("ok", "Situation",
-                f"Toutes les catégories sont au niveau de leur objectif cumulé {annee_choisie}.",
-                "Rien ne demande d'action corrective a ce stade.")
-        rythme_requis, categorie_prio = 0, None
+                f"{categorie_choisie} est au niveau de son objectif cumulé "
+                f"{annee_choisie}.",
+                "Rien ne demande d'action corrective à ce stade.")
+        rythme_requis = 0
     else:
-        prioritaire = en_retard.iloc[0]
-        categorie_prio = prioritaire["categorie"]
-        manque = int(prioritaire["manque"])
         # -(-a // b) = division arrondie vers le HAUT : on ne veut pas
-        # sous-estimer l'effort a fournir.
+        # sous-estimer l'effort à fournir.
         rythme_requis = -(-manque // mois_restants) if mois_restants else manque
         bandeau(
-            "alerte" if prioritaire["taux"] < 90 else "attention",
+            "alerte" if (taux is not None and taux < 90) else "attention",
             "Priorité",
-            f"{categorie_prio} : il manque <strong>{manque:,}</strong> ventes "
+            f"{categorie_choisie} : il manque <strong>{manque:,}</strong> ventes "
             f"sur l'objectif {annee_choisie}.".replace(",", " "),
             f"Soit {rythme_requis} ventes par mois sur les {mois_restants} mois restants."
-            if mois_restants else "L'année est terminée : l'écart ne peut plus etre rattrape.",
+            if mois_restants else "L'année est terminée : l'écart ne peut plus être rattrapé.",
         )
 
     # --- Trois indicateurs qui disent QUOI FAIRE (et non ou l'on en est) ---
@@ -1040,13 +1046,12 @@ def ecran_responsable():
     col_a.markdown(
         carte_kpi("Rythme à tenir",
                   f"{rythme_requis}",
-                  "ventes / mois pour rattraper" if rythme_requis else "objectif deja tenu",
+                  "ventes / mois pour rattraper" if rythme_requis else "objectif déjà tenu",
                   couleur=ROUGE if rythme_requis else VERT, icone="objectif"),
         unsafe_allow_html=True,
     )
 
-    decrochage = offre_qui_decroche(categorie_prio or categorie_choisie,
-                                    annee_choisie, mois_connus)
+    decrochage = offre_qui_decroche(categorie_choisie, annee_choisie, mois_connus)
     if decrochage:
         offre, evolution = decrochage
         col_b.markdown(
@@ -1069,21 +1074,25 @@ def ecran_responsable():
         unsafe_allow_html=True,
     )
 
-    # --- Etat categorie par categorie ---
+    # --- Etat categorie par categorie : ce bloc reste GLOBAL, et le dit ---
     st.write("")
-    st.subheader(f"État des catégories - cumul {annee_choisie}")
+    st.subheader(f"État de toutes les catégories - cumul {annee_choisie}")
+    st.caption(
+        "Ce bloc compare les catégories entre elles : il ne dépend pas du "
+        "filtre choisi plus haut."
+    )
     for _, ligne_alerte in alertes.iterrows():
-        manque = int(ligne_alerte["manque"])
-        taux = ligne_alerte["taux"]
+        manque_cat = int(ligne_alerte["manque"])
+        taux_cat = ligne_alerte["taux"]
         nom = ligne_alerte["categorie"]
-        if taux is None:
-            st.info(f"{nom} : pas d'objectif defini.")
-        elif taux >= 100:
-            st.success(f"{nom} : objectif atteint a ce stade ({taux} %).")
-        elif taux >= 90:
-            st.warning(f"{nom} : proche de l'objectif ({taux} %) - il manque {manque} ventes.")
+        if taux_cat is None:
+            st.info(f"{nom} : pas d'objectif défini.")
+        elif taux_cat >= 100:
+            st.success(f"{nom} : objectif atteint à ce stade ({taux_cat} %).")
+        elif taux_cat >= 90:
+            st.warning(f"{nom} : proche de l'objectif ({taux_cat} %) - il manque {manque_cat} ventes.")
         else:
-            st.error(f"{nom} : en retard ({taux} %) - il manque {manque} ventes.")
+            st.error(f"{nom} : en retard ({taux_cat} %) - il manque {manque_cat} ventes.")
 
     st.caption(
         "Le fichier des réalisations du mois se dépose dans l'onglet "
@@ -1092,16 +1101,22 @@ def ecran_responsable():
 
 
 def ecran_analyste():
-    """Accueil de l'ANALYSTE / DIRECTION : ou atterrit-on, et est-ce fiable."""
+    """Accueil de l'ANALYSTE / DIRECTION : ou atterrit-on, et est-ce fiable.
+
+    Meme regle que pour le poste de pilotage : le haut de l'ecran porte sur la
+    categorie choisie, le tableau final compare les categories entre elles.
+    """
     titre_ecran(
         "Note de synthèse",
-        f"Projection de fin d'année {annee_choisie}, fiabilité du modèle et lecture régionale.",
+        f"{categorie_choisie} : projection de fin d'année {annee_choisie}, "
+        f"fiabilité du modèle et lecture régionale.",
     )
 
-    # --- Atterrissage annuel, toutes categories confondues ---
+    # --- Atterrissage annuel de la categorie choisie ---
     atterrissage = None
     if atteinte is not None:
-        lignes_annee = atteinte[atteinte["annee"] == annee_choisie]
+        lignes_annee = atteinte[(atteinte["annee"] == annee_choisie)
+                                & (atteinte["categorie"] == categorie_choisie)]
         if len(lignes_annee):
             estime = int(lignes_annee["total_estime"].sum())
             vise = int(lignes_annee["objectif_annuel"].sum())
@@ -1110,24 +1125,30 @@ def ecran_analyste():
 
     if atterrissage:
         estime, vise, taux_atterrissage = atterrissage
-        ton = "ok" if taux_atterrissage >= 100 else ("attention" if taux_atterrissage >= 90 else "alerte")
+        ton = ("ok" if taux_atterrissage >= 100
+               else ("attention" if taux_atterrissage >= 90 else "alerte"))
         bandeau(
             ton, "Atterrissage projeté",
-            f"<strong>{estime:,}</strong> ventes attendues fin {annee_choisie} "
-            f"pour {vise:,} visées, soit <strong>{taux_atterrissage} %</strong>.".replace(",", " "),
+            f"{categorie_choisie} : <strong>{estime:,}</strong> ventes attendues fin "
+            f"{annee_choisie} pour {vise:,} visées, soit "
+            f"<strong>{taux_atterrissage} %</strong>.".replace(",", " "),
             f"Écart projeté : {vise - estime:,} ventes.".replace(",", " ")
             if vise > estime else "Objectif annuel projeté comme atteint.",
         )
     else:
         bandeau("attention", "Atterrissage projeté",
-                "Projection indisponible pour cette année.",
+                f"Projection indisponible pour {categorie_choisie} en {annee_choisie}.",
                 "Lancer python prediction_atteinte.py pour la produire.")
 
-    # --- Trois indicateurs de DECISION ---
+    # --- Trois indicateurs de DECISION, pour la categorie choisie ---
     col_a, col_b, col_c = st.columns(3)
 
-    if validation is not None and len(validation):
-        mape = validation["erreur_pct"].mean()
+    # La fiabilite n'est pas la meme d'une categorie a l'autre : on donne celle
+    # de la categorie affichee, et non une moyenne qui ne vaudrait pour aucune.
+    val_cat = (validation[validation["categorie"] == categorie_choisie]
+               if validation is not None else None)
+    if val_cat is not None and len(val_cat):
+        mape = val_cat["erreur_pct"].mean()
         fiabilite = round(100 - mape, 1)
         col_a.markdown(
             carte_kpi("Fiabilité du modèle", f"{fiabilite} %",
@@ -1137,18 +1158,20 @@ def ecran_analyste():
         )
     else:
         col_a.markdown(
-            carte_kpi("Fiabilité du modèle", "-", "validation non calculee",
+            carte_kpi("Fiabilité du modèle", "-", "validation non calculée",
                       couleur=GRIS, icone="taux"),
             unsafe_allow_html=True,
         )
 
-    ventes_annee = ventes[ventes["annee"] == annee_choisie]
-    if len(ventes_annee) and "region" in ventes_annee.columns:
-        par_region = ventes_annee.groupby("region")["quantite"].sum().sort_values(ascending=False)
+    ventes_cat = ventes[(ventes["annee"] == annee_choisie)
+                        & (ventes["categorie"] == categorie_choisie)]
+    if len(ventes_cat) and "region" in ventes_cat.columns:
+        par_region = (ventes_cat.groupby("region")["quantite"].sum()
+                      .sort_values(ascending=False))
         part = par_region.iloc[0] / par_region.sum() * 100
         col_b.markdown(
             carte_kpi("Région motrice", par_region.index[0],
-                      f"{part:.1f} % du volume national",
+                      f"{part:.1f} % du volume {categorie_choisie}",
                       couleur=BLEU, icone="ventes"),
             unsafe_allow_html=True,
         )
@@ -1159,8 +1182,9 @@ def ecran_analyste():
             unsafe_allow_html=True,
         )
 
-    # Croissance entre les deux dernieres annees COMPLETES
-    par_annee = ventes.groupby("annee")["quantite"].sum()
+    # Croissance entre les deux dernieres annees COMPLETES, meme categorie
+    par_annee = (ventes[ventes["categorie"] == categorie_choisie]
+                 .groupby("annee")["quantite"].sum())
     annees_completes = [a for a in par_annee.index if a < annee_choisie]
     if len(annees_completes) >= 2:
         recente, precedente = annees_completes[-1], annees_completes[-2]
@@ -1178,12 +1202,16 @@ def ecran_analyste():
             unsafe_allow_html=True,
         )
 
-    # --- Projection detaillee par categorie ---
+    # --- Projection detaillee : ce tableau reste GLOBAL, et le dit ---
     if atteinte is not None:
         lignes_annee = atteinte[atteinte["annee"] == annee_choisie]
         if len(lignes_annee):
             st.write("")
-            st.subheader(f"Projection par catégorie - {annee_choisie}")
+            st.subheader(f"Projection de toutes les catégories - {annee_choisie}")
+            st.caption(
+                "Ce tableau compare les catégories entre elles : il ne dépend "
+                "pas du filtre choisi plus haut."
+            )
             tableau = lignes_annee[[
                 "categorie", "realise_connu", "prevu_restant",
                 "total_estime", "objectif_annuel", "taux_estime_pct",
