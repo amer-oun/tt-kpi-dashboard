@@ -59,18 +59,24 @@ CSV_OBJECTIFS = os.path.join("data", "objectifs.csv")
 # sinon on retombe sur les mots de passe de demonstration.
 COMPTES_PAR_DEFAUT = [
     (
-        "responsable",
-        os.environ.get("KPILOT_MDP_RESPONSABLE", "responsable2026"),
+        "s.benammar",
+        os.environ.get("KPILOT_MDP_RESPONSABLE", "Salma2026"),
         "responsable_commercial",
-        "Responsable commercial",
+        "Salma Ben Ammar",
     ),
     (
-        "analyste",
-        os.environ.get("KPILOT_MDP_ANALYSTE", "analyste2026"),
+        "k.trabelsi",
+        os.environ.get("KPILOT_MDP_ANALYSTE", "Karim2026"),
         "analyste_direction",
-        "Analyste / Direction",
+        "Karim Trabelsi",
     ),
 ]
+
+# Libelle lisible de chaque role, affiche dans l'interface.
+LIBELLE_ROLE = {
+    "responsable_commercial": "Responsable commercial",
+    "analyste_direction": "Analyste - Direction",
+}
 
 # Nombre d'iterations pour le hachage du mot de passe. Plus le nombre est
 # grand, plus il est long de tester des mots de passe au hasard.
@@ -171,7 +177,13 @@ def creer_tables(connexion):
 
 
 def creer_comptes_par_defaut(connexion):
-    """Cree les deux comptes utilisateurs s'ils n'existent pas encore."""
+    """Cree les comptes utilisateurs, ou met a jour ceux qui existent deja.
+
+    Si le compte n'existe pas, on l'insere. S'il existe, on rafraichit son role
+    et son nom : ainsi, changer un libelle dans COMPTES_PAR_DEFAUT suffit, sans
+    avoir a supprimer la base. Le mot de passe, lui, n'est reecrit que si le
+    compte vient d'etre cree (on n'ecrase pas un mot de passe deja en place).
+    """
     for nom_utilisateur, mot_de_passe, role, nom_complet in COMPTES_PAR_DEFAUT:
         # A-t-on deja ce compte ? (le "?" est un parametre : voir note plus bas)
         deja_la = connexion.execute(
@@ -186,6 +198,11 @@ def creer_comptes_par_defaut(connexion):
                    (nom_utilisateur, mot_de_passe, sel, role, nom_complet)
                    VALUES (?, ?, ?, ?, ?)""",
                 (nom_utilisateur, hacher_mot_de_passe(mot_de_passe, sel), sel, role, nom_complet),
+            )
+        else:
+            connexion.execute(
+                "UPDATE utilisateurs SET role = ?, nom_complet = ? WHERE nom_utilisateur = ?",
+                (role, nom_complet, nom_utilisateur),
             )
     connexion.commit()
 

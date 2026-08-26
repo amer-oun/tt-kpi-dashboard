@@ -101,8 +101,8 @@ def test_le_hachage_est_reproductible():
 def test_connexion_avec_les_bons_identifiants(base_temporaire):
     """Un identifiant et un mot de passe corrects renvoient le bon role."""
     # Act
-    responsable = bd.verifier_identifiants("responsable", "responsable2026")
-    analyste = bd.verifier_identifiants("analyste", "analyste2026")
+    responsable = bd.verifier_identifiants("s.benammar", "Salma2026")
+    analyste = bd.verifier_identifiants("k.trabelsi", "Karim2026")
     # Assert
     assert responsable["role"] == "responsable_commercial"
     assert analyste["role"] == "analyste_direction"
@@ -110,12 +110,12 @@ def test_connexion_avec_les_bons_identifiants(base_temporaire):
 
 def test_connexion_refusee_si_mot_de_passe_faux(base_temporaire):
     """Un mauvais mot de passe ne doit jamais laisser entrer."""
-    assert bd.verifier_identifiants("responsable", "mauvais") is None
+    assert bd.verifier_identifiants("s.benammar", "mauvais") is None
 
 
 def test_connexion_refusee_si_compte_inconnu(base_temporaire):
     """Un compte qui n'existe pas ne doit jamais laisser entrer."""
-    assert bd.verifier_identifiants("inconnu", "responsable2026") is None
+    assert bd.verifier_identifiants("inconnu", "Salma2026") is None
 
 
 def test_resistance_a_l_injection_sql(base_temporaire):

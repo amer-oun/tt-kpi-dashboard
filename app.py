@@ -24,6 +24,14 @@ VERT = "#1B9C6B"     # objectif atteint
 ORANGE = "#E8833A"   # proche de l'objectif
 GRIS = "#B9C4CF"     # neutre (barres objectif)
 
+# Variantes assombries des couleurs d'etat, reservees au PETIT TEXTE.
+# L'ambre, l'orange et le vert ci-dessus sont lumineux : ils conviennent a un
+# aplat ou a un gros chiffre, mais tombent sous le seuil de lisibilite
+# (4,5:1 sur fond blanc) des qu'ils servent a ecrire une etiquette.
+AMBRE_TEXTE = "#B45309"
+ORANGE_TEXTE = "#B45309"
+VERT_TEXTE = "#157F57"
+
 
 def charger_si_existe(chemin):
     """Charge un CSV s'il existe, sinon renvoie None.
@@ -245,14 +253,13 @@ def icone_svg(nom, couleur):
     )
 
 
-def carte_kpi(titre, valeur, sous_texte="", couleur=BLEU, extra_html="", icone="", delai=0):
+def carte_kpi(titre, valeur, sous_texte="", couleur=BLEU, extra_html="", icone=""):
     """Fabrique une carte KPI HTML (chiffre en Fira Code facon telemetrie).
 
     - icone : nom d'une icone SVG (voir ICONES) affichee en haut a droite ;
-    - delai : decalage d'apparition (en secondes) pour l'effet de cascade.
     """
     return f"""
-    <div class="tt-card" style="border-top: 3px solid {couleur}; animation-delay: {delai}s;">
+    <div class="tt-card" style="border-top: 3px solid {couleur};">
         <div class="tt-card-entete">
             <div class="tt-card-titre">{titre}</div>
             {icone_svg(icone, couleur)}
@@ -306,22 +313,66 @@ st.markdown(
     .block-container {{ padding-top: 1.2rem; padding-bottom: 2.5rem; max-width: 1280px; }}
 
     /* ---------- Page de connexion ---------- */
-    /* Le formulaire est centre et limite en largeur : sur un ecran large,
-       un champ de saisie etire sur 1200 px serait desagreable a lire. */
-    .kpilot-login-logo {{ text-align: center; margin: 6vh 0 0 0; }}
-    .kpilot-login-logo img {{ height: 78px; }}
-    .kpilot-login-titre {{
-        text-align: center; color: var(--tt-nuit); margin: 18px 0 2px 0;
-        font-size: 1.5rem; font-weight: 700;
+    .kp-login-entete {{ text-align: center; margin: 4vh 0 26px 0; }}
+    .kp-login-logo {{ height: 66px; }}
+    .kp-login-mot {{
+        font-size: 2rem; font-weight: 700; color: var(--tt-bleu); letter-spacing: -0.02em;
     }}
-    .kpilot-login-sous {{
-        text-align: center; color: var(--tt-muet); margin: 0 0 22px 0;
-        font-size: .92rem;
+    .kp-login-titre {{
+        color: var(--tt-nuit); margin: 16px 0 4px 0;
+        font-size: 1.9rem; font-weight: 700; letter-spacing: -0.02em;
+        text-wrap: balance;
     }}
-    [data-testid="stForm"] {{
-        max-width: 380px; margin: 0 auto; background: #FFFFFF;
-        border: 1px solid #E2E8F0; border-radius: 14px; padding: 22px 22px 8px 22px;
-        box-shadow: 0 8px 26px rgba(10,42,74,.08);
+    .kp-login-sous {{
+        color: var(--tt-muet); margin: 0 auto; font-size: .95rem; max-width: 52ch;
+    }}
+    .kp-login-consigne {{
+        color: var(--tt-nuit); font-size: .82rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 1px;
+        margin: 0 0 12px 0; text-align: center;
+    }}
+
+    /* Fiche d'un profil de demonstration. Bordure pleine + ombre discrete :
+       on ne cumule pas bordure marquee et ombre large. */
+    .kp-profil {{
+        background: var(--tt-surface); border: 1px solid var(--tt-bordure);
+        border-radius: 14px; padding: 18px 20px 14px 20px; height: 100%;
+        box-shadow: 0 1px 3px rgba(10,42,74,.06);
+    }}
+    .kp-profil-tete {{ display: flex; align-items: center; gap: 12px; }}
+    .kp-profil-pastille {{
+        width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: #fff; font-weight: 700; font-size: .95rem; letter-spacing: .5px;
+    }}
+    .kp-profil-identite {{ display: flex; flex-direction: column; line-height: 1.25; }}
+    .kp-profil-nom {{ color: var(--tt-nuit); font-weight: 700; font-size: 1.02rem; }}
+    .kp-profil-fonction {{
+        font-size: .78rem; font-weight: 700; text-transform: uppercase; letter-spacing: .7px;
+    }}
+    .kp-profil-mission {{
+        color: var(--tt-texte); font-size: .89rem; line-height: 1.5;
+        margin: 13px 0 0 0;
+    }}
+    .kp-profil-acces {{ color: var(--tt-muet); font-size: .82rem; margin: 8px 0 0 0; }}
+    .kp-profil-ids {{
+        font-family: var(--mono); font-size: .84rem; color: var(--tt-nuit);
+        background: #EEF3F9; border-radius: 8px; padding: 7px 10px;
+        margin: 12px 0 2px 0; text-align: center;
+    }}
+    .kp-profil-sep {{ color: var(--tt-muet); margin: 0 6px; }}
+
+    /* Identite dans la barre laterale */
+    .kp-qui {{ padding: 2px 0 6px 0; }}
+    .kp-qui-nom {{ color: var(--tt-nuit); font-weight: 700; font-size: .98rem; }}
+    .kp-qui-role {{
+        color: var(--tt-bleu); font-size: .74rem; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .8px; margin-top: 2px;
+    }}
+
+    .kp-login-pied {{
+        color: var(--tt-muet); font-size: .8rem; line-height: 1.6;
+        max-width: 74ch; margin: 26px auto 0 auto; text-align: center;
     }}
 
     /* ---------- Bandeau d'en-tete (masthead) ---------- */
@@ -358,14 +409,47 @@ st.markdown(
     .kpilot-logo {{ height: 52px; width: auto; display: block; }}
     .tt-brand .tt-op-sep {{ width: 1px; height: 34px; background: rgba(255,255,255,.22); }}
 
+    /* ---------- Ecran d'accueil propre a chaque role ---------- */
+    .kp-ecran {{ margin: 2px 0 14px 0; }}
+    .kp-ecran-titre {{
+        color: var(--tt-nuit); font-size: 1.45rem; font-weight: 700;
+        margin: 0; letter-spacing: -0.01em;
+    }}
+    .kp-ecran-sous {{
+        color: var(--tt-muet); font-size: .93rem; margin: 4px 0 0 0;
+        max-width: 68ch;
+    }}
+
+    /* Bandeau de tete : l'unique information a retenir en ouvrant l'ecran.
+       Bordure pleine (pas de bande laterale coloree) + fond tres legerement
+       teinte, pour que le message se distingue sans crier. */
+    .kp-bandeau {{
+        background: var(--tt-surface); border: 1px solid var(--tt-bordure);
+        border-top-width: 3px; border-radius: 12px;
+        padding: 14px 18px 15px 18px; margin-bottom: 16px;
+    }}
+    .kp-bandeau-etiquette {{
+        font-size: 11.5px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: .9px; margin-bottom: 5px;
+    }}
+    .kp-bandeau-phrase {{
+        color: var(--tt-texte); font-size: 1.05rem; line-height: 1.45;
+        max-width: 72ch;
+    }}
+    .kp-bandeau-detail {{
+        color: var(--tt-muet); font-size: .88rem; margin-top: 5px;
+    }}
+
     /* ---------- Cartes KPI (style data-dense + survol) ---------- */
+    /* Pas d'animation d'entree : un outil de travail s'ouvre sur la tache,
+       il ne fait pas defiler ses cartes a chaque rechargement. Les seules
+       transitions conservees traduisent un ETAT (le survol). */
     .tt-card {{
         background: var(--tt-surface); border: 1px solid var(--tt-bordure); border-radius: 14px;
         padding: 15px 18px 16px 18px; box-shadow: 0 1px 3px rgba(10,42,74,.06);
-        animation: apparition .55s cubic-bezier(.22,1,.36,1) both;
-        transition: transform .25s cubic-bezier(.22,1,.36,1),
-                    box-shadow .25s cubic-bezier(.22,1,.36,1),
-                    border-color .25s ease;
+        transition: transform .18s cubic-bezier(.22,1,.36,1),
+                    box-shadow .18s cubic-bezier(.22,1,.36,1),
+                    border-color .18s ease;
     }}
     .tt-card:hover {{
         transform: translateY(-3px);
@@ -494,39 +578,127 @@ ONGLETS_PAR_ROLE = {
 }
 
 
+def connecter(utilisateur_trouve):
+    """Ouvre la session pour un utilisateur et recharge la page."""
+    st.session_state["utilisateur"] = utilisateur_trouve
+    st.rerun()
+
+
 def afficher_page_connexion():
-    """Affiche le formulaire de connexion et interrompt le reste de la page."""
-    if os.path.exists("assets/logo_kpilot.png"):
-        st.markdown(
-            f'<div class="kpilot-login-logo">'
-            f'<img src="{image_data_uri("assets/logo_kpilot.png")}" alt="KPIlot"/></div>',
-            unsafe_allow_html=True,
-        )
+    """Affiche l'ecran de connexion et interrompt le reste de la page.
+
+    L'ecran remplit deux roles a la fois :
+      - c'est une vraie porte d'entree (identifiant + mot de passe verifies) ;
+      - c'est aussi une page de demonstration : les deux comptes sont affiches
+        avec leurs identifiants, et un bouton permet d'entrer directement.
+        Un jury peut ainsi essayer les deux profils sans rien taper.
+    """
+    # --- En-tete : marque et raison d'etre de l'application ---
+    logo = (
+        f'<img class="kp-login-logo" src="{image_data_uri("assets/logo_kpilot.png")}" alt="KPIlot"/>'
+        if os.path.exists("assets/logo_kpilot.png") else '<div class="kp-login-mot">KPIlot</div>'
+    )
     st.markdown(
-        '<h2 class="kpilot-login-titre">Connexion a KPIlot</h2>'
-        '<p class="kpilot-login-sous">Suivi et prevision des KPI de vente &middot; Tunisie Telecom</p>',
+        f'<div class="kp-login-entete">{logo}'
+        f'<h1 class="kp-login-titre">Pilotage des ventes</h1>'
+        f'<p class="kp-login-sous">Suivi, prevision et alertes sur les indicateurs '
+        f'commerciaux &middot; Tunisie Telecom</p></div>',
         unsafe_allow_html=True,
     )
 
-    # st.form regroupe plusieurs champs : le script n'est relance qu'au clic
-    # sur le bouton, et non a chaque frappe au clavier.
-    with st.form("formulaire_connexion"):
-        nom_saisi = st.text_input("Identifiant")
-        mot_de_passe_saisi = st.text_input("Mot de passe", type="password")
-        valider = st.form_submit_button("Se connecter")
+    st.markdown(
+        '<p class="kp-login-consigne">Choisissez un profil de demonstration</p>',
+        unsafe_allow_html=True,
+    )
 
-    if valider:
-        utilisateur_trouve = bd.verifier_identifiants(nom_saisi, mot_de_passe_saisi)
-        if utilisateur_trouve is None:
-            # Message volontairement vague : on ne precise pas si c'est
-            # l'identifiant ou le mot de passe qui est faux, pour ne pas
-            # aider quelqu'un qui chercherait a deviner un compte.
-            st.error("Identifiant ou mot de passe incorrect.")
-        else:
-            # On memorise l'utilisateur dans la session, puis on relance la
-            # page : cette fois le test plus bas laissera passer.
-            st.session_state["utilisateur"] = utilisateur_trouve
-            st.rerun()
+    # --- Les deux profils, cote a cote ---
+    # Chaque colonne decrit un acteur : qui il est, ce qu'il vient chercher,
+    # et ses identifiants. Le bouton connecte directement.
+    profils = [
+        {
+            "identifiant": "s.benammar",
+            "mot_de_passe": "Salma2026",
+            "nom": "Salma Ben Ammar",
+            "fonction": "Responsable commercial",
+            "mission": "Suit les objectifs au quotidien, importe les realisations "
+                       "du mois et corrige les ecarts.",
+            "acces": "7 onglets &middot; import des donnees autorise",
+            "couleur": BLEU,
+            "couleur_texte": BLEU,
+            "initiales": "SB",
+        },
+        {
+            "identifiant": "k.trabelsi",
+            "mot_de_passe": "Karim2026",
+            "nom": "Karim Trabelsi",
+            "fonction": "Analyste - Direction",
+            "mission": "Analyse les tendances, la projection annuelle et la "
+                       "repartition regionale pour decider.",
+            "acces": "6 onglets &middot; consultation et export uniquement",
+            "couleur": AMBRE,
+            "couleur_texte": AMBRE_TEXTE,
+            "initiales": "KT",
+        },
+    ]
+
+    colonnes = st.columns(2, gap="medium")
+    for colonne, profil in zip(colonnes, profils):
+        with colonne:
+            st.markdown(
+                f'<div class="kp-profil">'
+                f'  <div class="kp-profil-tete">'
+                f'    <span class="kp-profil-pastille" style="background:{profil["couleur"]};">'
+                f'{profil["initiales"]}</span>'
+                f'    <span class="kp-profil-identite">'
+                f'      <span class="kp-profil-nom">{profil["nom"]}</span>'
+                f'      <span class="kp-profil-fonction" style="color:{profil["couleur_texte"]};">'
+                f'{profil["fonction"]}</span>'
+                f'    </span>'
+                f'  </div>'
+                f'  <p class="kp-profil-mission">{profil["mission"]}</p>'
+                f'  <p class="kp-profil-acces">{profil["acces"]}</p>'
+                f'  <p class="kp-profil-ids">'
+                f'    <span>{profil["identifiant"]}</span>'
+                f'    <span class="kp-profil-sep">/</span>'
+                f'    <span>{profil["mot_de_passe"]}</span>'
+                f'  </p>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+            if st.button(f"Entrer comme {profil['fonction'].split(' -')[0].lower()}",
+                         key=f"demo_{profil['identifiant']}", width="stretch"):
+                trouve = bd.verifier_identifiants(profil["identifiant"], profil["mot_de_passe"])
+                if trouve:
+                    connecter(trouve)
+                else:
+                    st.error("Compte de demonstration indisponible.")
+
+    # --- Connexion manuelle, pour montrer que l'authentification est reelle ---
+    with st.expander("Se connecter avec un identifiant"):
+        # st.form regroupe plusieurs champs : le script n'est relance qu'au clic
+        # sur le bouton, et non a chaque frappe au clavier.
+        with st.form("formulaire_connexion"):
+            nom_saisi = st.text_input("Identifiant")
+            mot_de_passe_saisi = st.text_input("Mot de passe", type="password")
+            valider = st.form_submit_button("Se connecter", width="stretch")
+
+        if valider:
+            utilisateur_trouve = bd.verifier_identifiants(nom_saisi, mot_de_passe_saisi)
+            if utilisateur_trouve is None:
+                # Message volontairement vague : on ne precise pas si c'est
+                # l'identifiant ou le mot de passe qui est faux, pour ne pas
+                # aider quelqu'un qui chercherait a deviner un compte.
+                st.error("Identifiant ou mot de passe incorrect.")
+            else:
+                connecter(utilisateur_trouve)
+
+    st.markdown(
+        '<p class="kp-login-pied">Les mots de passe sont stockes haches '
+        '(PBKDF2-SHA256, 100 000 iterations) avec un sel propre a chaque compte. '
+        'Les identifiants ci-dessus sont publics parce qu\'il s\'agit d\'une '
+        'demonstration sur donnees simulees.</p>',
+        unsafe_allow_html=True,
+    )
 
     st.stop()  # rien de ce qui suit dans app.py n'est execute
 
@@ -599,9 +771,11 @@ kpi = calculer_kpi(ventes, objectifs)
 # ============================================================================
 # ---- Identite de l'utilisateur connecte + deconnexion ----
 st.sidebar.markdown(
-    f"**{utilisateur['nom_complet']}**  \n"
-    f"<span style='color:#5A7086;font-size:.85rem'>connecte en tant que "
-    f"« {utilisateur['nom_utilisateur']} »</span>",
+    f'<div class="kp-qui">'
+    f'<div class="kp-qui-nom">{utilisateur["nom_complet"]}</div>'
+    f'<div class="kp-qui-role">'
+    f'{bd.LIBELLE_ROLE.get(role_utilisateur, role_utilisateur)}</div>'
+    f'</div>',
     unsafe_allow_html=True,
 )
 if st.sidebar.button("Se deconnecter"):
@@ -621,107 +795,320 @@ kpi_filtre = kpi[(kpi["categorie"] == categorie_choisie) & (kpi["annee"] == anne
 kpi_annee = kpi[kpi["annee"] == annee_choisie]
 
 # ============================================================================
-#  Cartes KPI (le taux porte la signature "barres de signal")
+#  Ecran d'accueil : IL DEPEND DU ROLE
 # ============================================================================
+# Le responsable commercial et la direction ne se posent pas la meme question.
+#
+#   - le responsable, chaque matin : "qu'est-ce qui est en retard, et que
+#     dois-je faire ce mois-ci ?"   -> un POSTE DE PILOTAGE, tourne vers l'action ;
+#   - la direction, ponctuellement : "ou atterrit-on cette annee, et peut-on
+#     s'y fier ?"                   -> une NOTE DE SYNTHESE, tournee vers la decision.
+#
+# Les onglets d'analyse restent communs (les memes chiffres doivent rester
+# consultables par les deux), mais l'entree dans l'application differe.
+
+# --- Chiffres communs aux deux ecrans ---
 total_realise = kpi_filtre["ventes_reelles"].sum()
 total_objectif = kpi_filtre["objectif_mensuel"].sum()
 taux_global = round(total_realise / total_objectif * 100, 1) if total_objectif != 0 else None
 ecart_global = total_realise - total_objectif
-couleur_taux = couleur_selon_taux(taux_global)
 
-colonne_1, colonne_2, colonne_3 = st.columns(3)
-# delai croissant -> les cartes apparaissent en cascade (effet "stagger")
-colonne_1.markdown(
-    carte_kpi(
-        "Ventes realisees (cumul)",
-        f"{total_realise:,}".replace(",", " "),
-        f"{categorie_choisie} - {annee_choisie}",
-        icone="ventes",
-        delai=0.00,
-    ),
-    unsafe_allow_html=True,
-)
-colonne_2.markdown(
-    carte_kpi(
-        "Objectif (cumul)",
-        f"{total_objectif:,}".replace(",", " "),
-        "cible sur la periode",
-        couleur=GRIS,
-        icone="objectif",
-        delai=0.08,
-    ),
-    unsafe_allow_html=True,
-)
-colonne_3.markdown(
-    carte_kpi(
-        "Taux de realisation",
-        f"{taux_global} %" if taux_global is not None else "N/A",
-        f"ecart : {ecart_global:+} ventes" if taux_global is not None else "",
-        couleur=couleur_taux,
-        extra_html=barres_signal(taux_global, couleur_taux),
-        icone="taux",
-        delai=0.16,
-    ),
-    unsafe_allow_html=True,
-)
-
-st.write("")
-
-st.download_button(
-    label="Telecharger le KPI filtre (CSV)",
-    data=kpi_filtre.to_csv(index=False).encode("utf-8"),
-    file_name=f"kpi_{categorie_choisie}_{annee_choisie}.csv",
-    mime="text/csv",
-)
-
-# ============================================================================
-#  Bandeau d'alertes automatiques (toutes categories, annee selectionnee)
-# ============================================================================
-# But : rendre le dashboard "actionnable". Le responsable voit tout de suite
-# quelles categories sont en retard sur leur objectif, sans lire les chiffres.
-st.subheader(f"Alertes - situation cumulee {annee_choisie}")
-
-# On cumule ventes et objectifs de l'annee, par categorie
+# Situation cumulee de TOUTES les categories sur l'annee choisie
 alertes = (
     kpi_annee.groupby("categorie")[["ventes_reelles", "objectif_mensuel"]]
     .sum()
     .reset_index()
 )
-# Taux cumule, avec protection contre la division par zero
 alertes["taux"] = alertes.apply(
     lambda r: round(r["ventes_reelles"] / r["objectif_mensuel"] * 100, 1)
     if r["objectif_mensuel"] else None,
     axis=1,
 )
+alertes["manque"] = alertes["objectif_mensuel"] - alertes["ventes_reelles"]
 
-for _, ligne_alerte in alertes.iterrows():
-    manque = int(ligne_alerte["objectif_mensuel"] - ligne_alerte["ventes_reelles"])
-    taux = ligne_alerte["taux"]
-    nom = ligne_alerte["categorie"]
-    if taux is None:
-        st.info(f"{nom} : pas d'objectif defini.")
-    elif taux >= 100:
-        # st.success = message vert (avec icone integree)
-        st.success(f"{nom} : objectif atteint a ce stade ({taux} %).")
-    elif taux >= 90:
-        # st.warning = message orange
-        st.warning(f"{nom} : proche de l'objectif ({taux} %) - il manque {manque} ventes.")
+# Dernier mois pour lequel on a des ventes, et mois restants dans l'annee
+mois_connus = int(kpi_annee["mois"].max()) if len(kpi_annee) else 0
+mois_restants = max(12 - mois_connus, 0)
+
+
+def titre_ecran(titre, sous_titre):
+    """Titre de l'ecran d'accueil, avec une phrase qui dit a qui il s'adresse."""
+    st.markdown(
+        f'<div class="kp-ecran"><h2 class="kp-ecran-titre">{titre}</h2>'
+        f'<p class="kp-ecran-sous">{sous_titre}</p></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def bandeau(ton, etiquette, phrase, detail=""):
+    """Bandeau de tete : la seule information a retenir en ouvrant l'ecran.
+
+    'ton' vaut 'alerte', 'attention' ou 'ok' et determine la couleur.
+    """
+    # Deux teintes : une pour le trait (aplat, contraste non critique), une
+    # pour l'etiquette en petites capitales (contraste critique).
+    couleur = {"alerte": ROUGE, "attention": ORANGE, "ok": VERT}.get(ton, BLEU)
+    couleur_texte = {"alerte": ROUGE, "attention": ORANGE_TEXTE,
+                     "ok": VERT_TEXTE}.get(ton, BLEU)
+    st.markdown(
+        f'<div class="kp-bandeau" style="border-color:{couleur};">'
+        f'<div class="kp-bandeau-etiquette" style="color:{couleur_texte};">{etiquette}</div>'
+        f'<div class="kp-bandeau-phrase">{phrase}</div>'
+        + (f'<div class="kp-bandeau-detail">{detail}</div>' if detail else "")
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def offre_qui_decroche(categorie, annee, mois_reference):
+    """Sous-categorie dont la PART dans la categorie recule le plus.
+
+    On compare la part de chaque offre sur le dernier mois connu a sa part
+    moyenne depuis le debut de l'annee. Celle qui recule le plus est celle
+    sur laquelle il faut agir en priorite.
+    Renvoie (nom, evolution en %) ou None si le calcul n'est pas possible.
+    """
+    lignes = ventes[(ventes["annee"] == annee) & (ventes["categorie"] == categorie)]
+    if lignes.empty or lignes["quantite"].sum() == 0:
+        return None
+    part_moyenne = lignes.groupby("sous_categorie")["quantite"].sum() / lignes["quantite"].sum()
+
+    dernier_mois = lignes[lignes["mois"] == mois_reference]
+    if dernier_mois.empty or dernier_mois["quantite"].sum() == 0:
+        return None
+    part_dernier = dernier_mois.groupby("sous_categorie")["quantite"].sum() / dernier_mois["quantite"].sum()
+
+    # Protection : on ne divise que par les parts moyennes non nulles
+    part_moyenne = part_moyenne[part_moyenne > 0]
+    evolution = ((part_dernier - part_moyenne) / part_moyenne * 100).dropna().sort_values()
+    if evolution.empty:
+        return None
+    return evolution.index[0], round(float(evolution.iloc[0]), 1)
+
+
+def ecran_responsable():
+    """Accueil du RESPONSABLE COMMERCIAL : ou agir, et a quel rythme."""
+    titre_ecran(
+        "Poste de pilotage",
+        f"Ce qu'il faut regarder aujourd'hui pour tenir les objectifs {annee_choisie}.",
+    )
+
+    en_retard = alertes[alertes["manque"] > 0].sort_values("manque", ascending=False)
+
+    if len(en_retard) == 0:
+        bandeau("ok", "Situation",
+                f"Toutes les categories sont au niveau de leur objectif cumule {annee_choisie}.",
+                "Rien ne demande d'action corrective a ce stade.")
+        rythme_requis, categorie_prio = 0, None
     else:
-        # st.error = message rouge
-        st.error(f"{nom} : en retard ({taux} %) - il manque {manque} ventes.")
+        prioritaire = en_retard.iloc[0]
+        categorie_prio = prioritaire["categorie"]
+        manque = int(prioritaire["manque"])
+        # -(-a // b) = division arrondie vers le HAUT : on ne veut pas
+        # sous-estimer l'effort a fournir.
+        rythme_requis = -(-manque // mois_restants) if mois_restants else manque
+        bandeau(
+            "alerte" if prioritaire["taux"] < 90 else "attention",
+            "Priorite",
+            f"{categorie_prio} : il manque <strong>{manque:,}</strong> ventes "
+            f"sur l'objectif {annee_choisie}.".replace(",", " "),
+            f"Soit {rythme_requis} ventes par mois sur les {mois_restants} mois restants."
+            if mois_restants else "L'annee est terminee : l'ecart ne peut plus etre rattrape.",
+        )
 
-# --- Bouton d'export du rapport PDF ---
-# On genere le PDF a la demande et on le propose au telechargement.
+    # --- Trois indicateurs qui disent QUOI FAIRE (et non ou l'on en est) ---
+    col_a, col_b, col_c = st.columns(3)
+    col_a.markdown(
+        carte_kpi("Rythme a tenir",
+                  f"{rythme_requis}",
+                  "ventes / mois pour rattraper" if rythme_requis else "objectif deja tenu",
+                  couleur=ROUGE if rythme_requis else VERT, icone="objectif"),
+        unsafe_allow_html=True,
+    )
+
+    decrochage = offre_qui_decroche(categorie_prio or categorie_choisie,
+                                    annee_choisie, mois_connus)
+    if decrochage:
+        offre, evolution = decrochage
+        col_b.markdown(
+            carte_kpi("Offre qui decroche", offre,
+                      f"{evolution:+.0f} % de part le dernier mois",
+                      couleur=ORANGE, icone="ventes"),
+            unsafe_allow_html=True,
+        )
+    else:
+        col_b.markdown(
+            carte_kpi("Offre qui decroche", "-", "donnees insuffisantes",
+                      couleur=GRIS, icone="ventes"),
+            unsafe_allow_html=True,
+        )
+
+    col_c.markdown(
+        carte_kpi("Temps restant", f"{mois_restants}",
+                  f"mois avant la fin {annee_choisie}",
+                  couleur=BLEU, icone="annuel"),
+        unsafe_allow_html=True,
+    )
+
+    # --- Etat categorie par categorie ---
+    st.write("")
+    st.subheader(f"Etat des categories - cumul {annee_choisie}")
+    for _, ligne_alerte in alertes.iterrows():
+        manque = int(ligne_alerte["manque"])
+        taux = ligne_alerte["taux"]
+        nom = ligne_alerte["categorie"]
+        if taux is None:
+            st.info(f"{nom} : pas d'objectif defini.")
+        elif taux >= 100:
+            st.success(f"{nom} : objectif atteint a ce stade ({taux} %).")
+        elif taux >= 90:
+            st.warning(f"{nom} : proche de l'objectif ({taux} %) - il manque {manque} ventes.")
+        else:
+            st.error(f"{nom} : en retard ({taux} %) - il manque {manque} ventes.")
+
+    st.caption(
+        "Le fichier des realisations du mois se depose dans l'onglet "
+        "**Saisie / Import** : les indicateurs ci-dessus se recalculent aussitot."
+    )
+
+
+def ecran_analyste():
+    """Accueil de l'ANALYSTE / DIRECTION : ou atterrit-on, et est-ce fiable."""
+    titre_ecran(
+        "Note de synthese",
+        f"Projection de fin d'annee {annee_choisie}, fiabilite du modele et lecture regionale.",
+    )
+
+    # --- Atterrissage annuel, toutes categories confondues ---
+    atterrissage = None
+    if atteinte is not None:
+        lignes_annee = atteinte[atteinte["annee"] == annee_choisie]
+        if len(lignes_annee):
+            estime = int(lignes_annee["total_estime"].sum())
+            vise = int(lignes_annee["objectif_annuel"].sum())
+            taux_atterrissage = round(estime / vise * 100, 1) if vise else None
+            atterrissage = (estime, vise, taux_atterrissage)
+
+    if atterrissage:
+        estime, vise, taux_atterrissage = atterrissage
+        ton = "ok" if taux_atterrissage >= 100 else ("attention" if taux_atterrissage >= 90 else "alerte")
+        bandeau(
+            ton, "Atterrissage projete",
+            f"<strong>{estime:,}</strong> ventes attendues fin {annee_choisie} "
+            f"pour {vise:,} visees, soit <strong>{taux_atterrissage} %</strong>.".replace(",", " "),
+            f"Ecart projete : {vise - estime:,} ventes.".replace(",", " ")
+            if vise > estime else "Objectif annuel projete comme atteint.",
+        )
+    else:
+        bandeau("attention", "Atterrissage projete",
+                "Projection indisponible pour cette annee.",
+                "Lancer python prediction_atteinte.py pour la produire.")
+
+    # --- Trois indicateurs de DECISION ---
+    col_a, col_b, col_c = st.columns(3)
+
+    if validation is not None and len(validation):
+        mape = validation["erreur_pct"].mean()
+        fiabilite = round(100 - mape, 1)
+        col_a.markdown(
+            carte_kpi("Fiabilite du modele", f"{fiabilite} %",
+                      f"erreur moyenne {mape:.1f} % (backtesting)",
+                      couleur=couleur_selon_taux(fiabilite), icone="taux"),
+            unsafe_allow_html=True,
+        )
+    else:
+        col_a.markdown(
+            carte_kpi("Fiabilite du modele", "-", "validation non calculee",
+                      couleur=GRIS, icone="taux"),
+            unsafe_allow_html=True,
+        )
+
+    ventes_annee = ventes[ventes["annee"] == annee_choisie]
+    if len(ventes_annee) and "region" in ventes_annee.columns:
+        par_region = ventes_annee.groupby("region")["quantite"].sum().sort_values(ascending=False)
+        part = par_region.iloc[0] / par_region.sum() * 100
+        col_b.markdown(
+            carte_kpi("Region motrice", par_region.index[0],
+                      f"{part:.1f} % du volume national",
+                      couleur=BLEU, icone="ventes"),
+            unsafe_allow_html=True,
+        )
+    else:
+        col_b.markdown(
+            carte_kpi("Region motrice", "-", "pas de donnee regionale",
+                      couleur=GRIS, icone="ventes"),
+            unsafe_allow_html=True,
+        )
+
+    # Croissance entre les deux dernieres annees COMPLETES
+    par_annee = ventes.groupby("annee")["quantite"].sum()
+    annees_completes = [a for a in par_annee.index if a < annee_choisie]
+    if len(annees_completes) >= 2:
+        recente, precedente = annees_completes[-1], annees_completes[-2]
+        croissance = (par_annee[recente] / par_annee[precedente] - 1) * 100
+        col_c.markdown(
+            carte_kpi("Croissance annuelle", f"{croissance:+.1f} %",
+                      f"{precedente} vers {recente}",
+                      couleur=VERT if croissance >= 0 else ROUGE, icone="annuel"),
+            unsafe_allow_html=True,
+        )
+    else:
+        col_c.markdown(
+            carte_kpi("Croissance annuelle", "-", "historique trop court",
+                      couleur=GRIS, icone="annuel"),
+            unsafe_allow_html=True,
+        )
+
+    # --- Projection detaillee par categorie ---
+    if atteinte is not None:
+        lignes_annee = atteinte[atteinte["annee"] == annee_choisie]
+        if len(lignes_annee):
+            st.write("")
+            st.subheader(f"Projection par categorie - {annee_choisie}")
+            tableau = lignes_annee[[
+                "categorie", "realise_connu", "prevu_restant",
+                "total_estime", "objectif_annuel", "taux_estime_pct",
+            ]].rename(columns={
+                "categorie": "Categorie", "realise_connu": "Realise connu",
+                "prevu_restant": "Prevu restant", "total_estime": "Total estime",
+                "objectif_annuel": "Objectif annuel", "taux_estime_pct": "Taux estime (%)",
+            })
+            st.dataframe(tableau, width="stretch", hide_index=True)
+
+    st.caption(
+        "Les onglets ci-dessous permettent d'entrer dans le detail : comparaison "
+        "des categories, analyse regionale et prevision mois par mois."
+    )
+
+
+# --- Aiguillage : chaque role recoit son ecran ---
+if role_utilisateur == "responsable_commercial":
+    ecran_responsable()
+else:
+    ecran_analyste()
+
+# --- Exports, communs aux deux roles ---
+st.write("")
+colonne_csv, colonne_pdf = st.columns(2)
+colonne_csv.download_button(
+    label="Exporter le KPI filtre (CSV)",
+    data=kpi_filtre.to_csv(index=False).encode("utf-8"),
+    file_name=f"kpi_{categorie_choisie}_{annee_choisie}.csv",
+    mime="text/csv",
+    width="stretch",
+)
 rapport_pdf = generer_rapport_pdf(
     categorie_choisie, annee_choisie, total_realise, total_objectif,
     taux_global, ecart_global, alertes,
 )
-st.download_button(
-    label="Telecharger le rapport PDF",
+colonne_pdf.download_button(
+    label="Exporter le rapport (PDF)",
     data=rapport_pdf,
     file_name=f"rapport_{categorie_choisie}_{annee_choisie}.pdf",
     mime="application/pdf",
+    width="stretch",
 )
+
 
 # ============================================================================
 #  Onglets
@@ -1046,7 +1433,6 @@ with onglets["Analyse regionale"]:
                 "sur la periode",
                 couleur=GRIS,
                 icone="annuel",
-                delai=0.08,
             ),
             unsafe_allow_html=True,
         )
@@ -1181,7 +1567,6 @@ with onglets["Prevision & alertes"]:
                     "Total estime",
                     f"{int(ligne['total_estime']):,}".replace(",", " "),
                     icone="annuel",
-                    delai=0.00,
                 ),
                 unsafe_allow_html=True,
             )
@@ -1191,7 +1576,6 @@ with onglets["Prevision & alertes"]:
                     f"{int(ligne['objectif_annuel']):,}".replace(",", " "),
                     couleur=GRIS,
                     icone="objectif",
-                    delai=0.08,
                 ),
                 unsafe_allow_html=True,
             )
@@ -1203,7 +1587,6 @@ with onglets["Prevision & alertes"]:
                     couleur=couleur_ligne,
                     extra_html=barres_signal(ligne["taux_estime_pct"], couleur_ligne),
                     icone="taux",
-                    delai=0.16,
                 ),
                 unsafe_allow_html=True,
             )
@@ -1274,7 +1657,6 @@ with onglets["Prevision & alertes"]:
                 "ventes / mois",
                 couleur=GRIS,
                 icone="ventes",
-                delai=0.00,
             ),
             unsafe_allow_html=True,
         )
@@ -1285,7 +1667,6 @@ with onglets["Prevision & alertes"]:
                 "ecart moyen entre prevu et reel",
                 couleur=GRIS,
                 icone="taux",
-                delai=0.08,
             ),
             unsafe_allow_html=True,
         )
@@ -1297,7 +1678,6 @@ with onglets["Prevision & alertes"]:
                 couleur=couleur_fiab,
                 extra_html=barres_signal(fiabilite, couleur_fiab),
                 icone="objectif",
-                delai=0.16,
             ),
             unsafe_allow_html=True,
         )
