@@ -572,6 +572,18 @@ bd.initialiser_base()
 # Onglets autorises pour chaque role. C'est la traduction en code du
 # diagramme des cas d'utilisation : l'analyste ne peut pas injecter de
 # donnees, il consulte et exporte.
+# Libelle lisible de chaque role. Il est defini ICI, dans l'interface, et non
+# dans base_donnees.py : c'est une question d'AFFICHAGE, pas de stockage. La
+# base retient un code technique ("responsable_commercial"), l'interface decide
+# comment l'ecrire a l'ecran. Cette separation evite aussi un piege de
+# developpement : Streamlit reexecute app.py a chaque rechargement, mais garde
+# les modules importes en memoire. Une constante ajoutee dans base_donnees.py
+# n'apparait donc qu'apres un redemarrage complet du serveur.
+LIBELLE_ROLE = {
+    "responsable_commercial": "Responsable commercial",
+    "analyste_direction": "Analyste - Direction",
+}
+
 ONGLETS_PAR_ROLE = {
     "responsable_commercial": [
         "Saisie / Import", "Tableau & mensuel", "Suivi cumule",
@@ -784,7 +796,7 @@ st.sidebar.markdown(
     f'<div class="kp-qui">'
     f'<div class="kp-qui-nom">{utilisateur["nom_complet"]}</div>'
     f'<div class="kp-qui-role">'
-    f'{bd.LIBELLE_ROLE.get(role_utilisateur, role_utilisateur)}</div>'
+    f'{LIBELLE_ROLE.get(role_utilisateur, role_utilisateur)}</div>'
     f'</div>',
     unsafe_allow_html=True,
 )

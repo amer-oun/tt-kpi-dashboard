@@ -214,3 +214,31 @@ def test_reinitialisation_restaure_les_donnees_de_demonstration(base_temporaire)
     totaux = bd.compter_lignes()
     assert totaux["ventes"] == 2
     assert totaux["utilisateurs"] == 2
+
+
+def test_la_base_ne_garde_que_les_comptes_declares(base_temporaire):
+    """Un compte retire du code doit disparaitre de la base.
+
+    Sans ce menage, renommer un identifiant laisserait l'ancien compte actif :
+    il n'apparaitrait plus a l'ecran mais permettrait encore de se connecter.
+    """
+    # Arrange : on ajoute a la main un compte qui n'est pas declare dans le code
+    connexion = bd.ouvrir_connexion()
+    sel = bd.generer_sel()
+    connexion.execute(
+        """INSERT INTO utilisateurs
+           (nom_utilisateur, mot_de_passe, sel, role, nom_complet)
+           VALUES (?, ?, ?, ?, ?)""",
+        ("ancien.compte", bd.hacher_mot_de_passe("motdepasse", sel), sel,
+         "responsable_commercial", "Compte oublie"),
+    )
+    connexion.commit()
+    connexion.close()
+    assert bd.verifier_identifiants("ancien.compte", "motdepasse") is not None
+
+    # Act : on relance l'initialisation
+    bd.initialiser_base()
+
+    # Assert : le compte non declare a ete supprime, les autres sont intacts
+    assert bd.verifier_identifiants("ancien.compte", "motdepasse") is None
+    assert bd.compter_lignes()["utilisateurs"] == len(bd.COMPTES_PAR_DEFAUT)

@@ -72,12 +72,6 @@ COMPTES_PAR_DEFAUT = [
     ),
 ]
 
-# Libelle lisible de chaque role, affiche dans l'interface.
-LIBELLE_ROLE = {
-    "responsable_commercial": "Responsable commercial",
-    "analyste_direction": "Analyste - Direction",
-}
-
 # Nombre d'iterations pour le hachage du mot de passe. Plus le nombre est
 # grand, plus il est long de tester des mots de passe au hasard.
 ITERATIONS_HACHAGE = 100_000
@@ -204,6 +198,18 @@ def creer_comptes_par_defaut(connexion):
                 "UPDATE utilisateurs SET role = ?, nom_complet = ? WHERE nom_utilisateur = ?",
                 (role, nom_complet, nom_utilisateur),
             )
+
+    # On supprime les comptes qui ne figurent plus dans COMPTES_PAR_DEFAUT.
+    # Les comptes de cette application sont declares dans le code : la table
+    # doit donc refleter exactement cette liste. Sans ce menage, renommer un
+    # identifiant laisserait l'ancien compte actif dans la base, toujours
+    # utilisable pour se connecter alors qu'il n'apparait plus nulle part.
+    noms_attendus = [compte[0] for compte in COMPTES_PAR_DEFAUT]
+    marqueurs = ",".join("?" for _ in noms_attendus)
+    connexion.execute(
+        f"DELETE FROM utilisateurs WHERE nom_utilisateur NOT IN ({marqueurs})",
+        noms_attendus,
+    )
     connexion.commit()
 
 
