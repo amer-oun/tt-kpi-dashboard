@@ -17,6 +17,7 @@ SOMMAIRE_RAPPORT.md
 Sommaire_Rapport_PFE.docx
 Rapport_PFE.docx
 Rapport_PFE.tex
+Rapport_PFE.tex.avant_*
 Rapport_PFE_relecture.docx
 Rapport_PFE.lol
 generer_figures.py
@@ -50,3 +51,4 @@ skills-lock.json
 # pour que le depot ne contienne pas de donnees dupliquees ni d'empreintes
 # de mots de passe.
 data/kpilot.db
+generer_figure_pytest.py
