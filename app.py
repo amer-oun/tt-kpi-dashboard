@@ -8,7 +8,8 @@ import streamlit as st
 
 # Logique de calcul KPI partagee avec calcul_kpi.py (voir kpi.py)
 from kpi import (preparer_ventes, calculer_kpi, separer_mois_complets,
-                 repartir_effort, evolution_des_parts)
+                 repartir_effort, evolution_des_parts,
+                 poids_du_segment, simuler_atterrissage, gain_necessaire)
 
 # Base de donnees SQLite : comptes utilisateurs, ventes et objectifs
 # (voir base_donnees.py pour le detail des tables et de la securite)
@@ -1951,6 +1952,113 @@ with onglets["Prévision & alertes"]:
                     f"à retenir ici est le taux estimé ({ligne['taux_estime_pct']} %). "
                     "Sur des ventes réelles, plus irrégulières, la fourchette s'élargit et "
                     "la probabilité redevient nuancée."
+                )
+
+    # ===== B bis. Simulateur : et si l'on gagnait sur un segment ? =====
+    # La projection ci-dessus dit ou l'on va. Le simulateur permet d'eprouver
+    # une autre trajectoire AVANT de s'y engager : c'est ce qui distingue un
+    # tableau de bord, qui constate, d'un outil d'aide a la decision.
+    st.divider()
+    st.subheader(f"Simulateur : et si ? - {categorie_choisie}")
+
+    if atteinte is None:
+        st.caption("Le simulateur nécessite data/atteinte_objectif.csv.")
+    else:
+        ligne_sim = atteinte[(atteinte["categorie"] == categorie_choisie)
+                             & (atteinte["annee"] == annee_choisie)]
+        if not len(ligne_sim):
+            st.caption(
+                f"Aucune projection disponible pour {categorie_choisie} "
+                f"en {annee_choisie}."
+            )
+        else:
+            ligne_sim = ligne_sim.iloc[0]
+            st.caption(
+                "Choisissez un segment et un gain, puis lisez où l'année "
+                "atterrirait. Le gain ne s'applique qu'à ce qu'il **reste** à "
+                "vendre, et seulement à la part du segment : demander 20 % de "
+                "mieux sur une région qui pèse 10 % des ventes n'améliore "
+                "l'année que de 2 %."
+            )
+
+            col_dim, col_val, col_gain = st.columns([1, 1.2, 1.4])
+            dimension = col_dim.selectbox(
+                "Agir sur", ["region", "sous_categorie"],
+                format_func=lambda d: "Une région" if d == "region" else "Une offre",
+                key="sim_dimension",
+            )
+            valeurs = sorted(
+                ventes.loc[ventes["categorie"] == categorie_choisie,
+                           dimension].unique()
+            )
+            segment = col_val.selectbox("Segment", valeurs, key="sim_segment")
+            gain = col_gain.slider("Gain espéré sur ce segment (%)",
+                                   min_value=-30, max_value=60, value=10, step=5,
+                                   key="sim_gain")
+
+            poids = poids_du_segment(ventes, categorie_choisie, annee_choisie,
+                                     dimension, segment)
+            resultat = simuler_atterrissage(
+                float(ligne_sim["realise_connu"]),
+                float(ligne_sim["prevu_restant"]),
+                float(ligne_sim["objectif_annuel"]),
+                poids, gain,
+            )
+
+            col_a, col_b, col_c = st.columns(3)
+            col_a.markdown(
+                carte_kpi("Poids du segment", f"{poids * 100:.1f} %",
+                          f"{segment} dans {categorie_choisie}",
+                          couleur=GRIS, icone="ventes"),
+                unsafe_allow_html=True,
+            )
+            col_b.markdown(
+                carte_kpi("Ventes gagnées", f"{resultat['gain_ventes']:+,}".replace(",", " "),
+                          f"sur les {int(ligne_sim['prevu_restant']):,} restantes".replace(",", " "),
+                          couleur=VERT if resultat["gain_ventes"] >= 0 else ROUGE,
+                          icone="ventes"),
+                unsafe_allow_html=True,
+            )
+            if resultat["taux_simule"] is not None:
+                ecart_taux = resultat["taux_simule"] - resultat["taux_initial"]
+                col_c.markdown(
+                    carte_kpi("Taux simulé", f"{resultat['taux_simule']} %",
+                              f"{ecart_taux:+.1f} pt vs {resultat['taux_initial']} %",
+                              couleur=couleur_selon_taux(resultat["taux_simule"]),
+                              icone="taux"),
+                    unsafe_allow_html=True,
+                )
+
+            st.write("")
+            st.plotly_chart(
+                jauge_taux(resultat["taux_simule"],
+                           f"Atterrissage simulé - {segment} {gain:+} %"),
+                width="stretch",
+            )
+
+            # La question inverse : combien faudrait-il gagner pour y arriver ?
+            necessaire = gain_necessaire(
+                float(ligne_sim["realise_connu"]),
+                float(ligne_sim["prevu_restant"]),
+                float(ligne_sim["objectif_annuel"]),
+                poids,
+            )
+            if necessaire is None:
+                st.success(
+                    f"L'objectif {annee_choisie} est déjà projeté comme atteint "
+                    f"pour {categorie_choisie}."
+                )
+            elif necessaire > 50:
+                st.warning(
+                    f"Pour atteindre l'objectif par ce seul segment, il faudrait "
+                    f"y gagner **{necessaire} %**. {segment} ne pèse que "
+                    f"{poids * 100:.1f} % des ventes : l'effort devra être "
+                    f"réparti sur plusieurs segments."
+                )
+            else:
+                st.info(
+                    f"Pour atteindre l'objectif par ce seul segment, il faudrait "
+                    f"y gagner **{necessaire} %**."
                 )
 
     # ===== C. Anomalies detectees =====

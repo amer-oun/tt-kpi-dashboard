@@ -165,6 +165,71 @@ def evolution_des_parts(ventes, categorie, annee, mois_reference,
     return evolution.sort_values()
 
 
+def poids_du_segment(ventes, categorie, annee, dimension=None, valeur=None):
+    """Part d'un segment dans les ventes d'une categorie, entre 0 et 1.
+
+    'dimension' vaut 'region' ou 'sous_categorie', 'valeur' le segment lui-meme
+    (par exemple 'Bizerte'). Si l'un des deux est absent, on considere que le
+    segment est la categorie entiere et le poids vaut 1.
+    """
+    lignes = ventes[(ventes["annee"] == annee) & (ventes["categorie"] == categorie)]
+    total = lignes["quantite"].sum()
+    if total == 0:
+        return 0.0
+    if not dimension or not valeur:
+        return 1.0
+    part = lignes.loc[lignes[dimension] == valeur, "quantite"].sum()
+    return float(part / total)
+
+
+def simuler_atterrissage(realise_connu, prevu_restant, objectif_annuel,
+                         poids_segment, gain_pct):
+    """Recalcule l'atterrissage annuel sous l'hypothese d'un gain sur un segment.
+
+    Le gain ne porte que sur ce qui RESTE a vendre, et seulement sur la part du
+    segment concerne : demander 20 % de mieux sur une region qui pese 10 % des
+    ventes n'ameliore l'annee que de 2 %.
+
+    Renvoie un dictionnaire :
+        total_initial, total_simule, gain_ventes,
+        taux_initial, taux_simule  (en %, ou None si l'objectif est nul)
+    """
+    total_initial = realise_connu + prevu_restant
+    gain_ventes = prevu_restant * poids_segment * (gain_pct / 100)
+    total_simule = total_initial + gain_ventes
+
+    def taux(total):
+        if not objectif_annuel:
+            return None
+        return round(total / objectif_annuel * 100, 1)
+
+    return {
+        "total_initial": int(round(total_initial)),
+        "total_simule": int(round(total_simule)),
+        "gain_ventes": int(round(gain_ventes)),
+        "taux_initial": taux(total_initial),
+        "taux_simule": taux(total_simule),
+    }
+
+
+def gain_necessaire(realise_connu, prevu_restant, objectif_annuel, poids_segment):
+    """Gain a realiser sur un segment pour atteindre tout juste l'objectif.
+
+    C'est la question inverse du simulateur : non plus « ou vais-je si je gagne
+    X ? » mais « combien dois-je gagner pour y arriver ? ».
+
+    Renvoie le pourcentage necessaire, ou None si l'objectif est deja atteint
+    ou si le segment est trop petit pour y suffire.
+    """
+    manque = objectif_annuel - (realise_connu + prevu_restant)
+    if manque <= 0:
+        return None                      # l'objectif est deja projete atteint
+    base = prevu_restant * poids_segment
+    if base <= 0:
+        return None                      # ce segment ne vend rien
+    return round(manque / base * 100, 1)
+
+
 def calculer_kpi(ventes, objectifs):
     """Calcule le KPI mensuel par categorie (ventes reelles vs objectif).
 

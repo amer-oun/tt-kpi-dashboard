@@ -15,7 +15,8 @@ Lancer les tests :  pytest -v
 import pandas as pd
 
 from kpi import (preparer_ventes, calculer_kpi, separer_mois_complets,
-                 repartir_effort, evolution_des_parts)
+                 repartir_effort, evolution_des_parts,
+                 poids_du_segment, simuler_atterrissage, gain_necessaire)
 
 
 def test_preparer_ventes_ajoute_annee_et_mois():
@@ -320,3 +321,79 @@ def test_l_evolution_fonctionne_aussi_sur_les_regions():
     evolution = evolution_des_parts(ventes, "Internet Fixe", 2026, 2, "region")
     assert evolution.index[0] == "Sfax"
     assert evolution["Sfax"] < 0
+
+
+# ============================================================================
+#  Simulateur « et si ? »
+# ============================================================================
+def test_le_poids_d_un_segment_est_sa_part_dans_la_categorie():
+    """Une region qui vend 3 fois plus qu'une autre pese 75 % des ventes."""
+    ventes = _ventes_par_region({"Sfax": 30, "Gabes": 10})
+    assert poids_du_segment(ventes, "Internet Fixe", 2026, "region", "Sfax") == 0.75
+    assert poids_du_segment(ventes, "Internet Fixe", 2026, "region", "Gabes") == 0.25
+
+
+def test_sans_segment_precise_le_poids_vaut_la_categorie_entiere():
+    """Simuler sur toute la categorie revient a un poids de 1."""
+    ventes = _ventes_par_region({"Sfax": 30, "Gabes": 10})
+    assert poids_du_segment(ventes, "Internet Fixe", 2026) == 1.0
+
+
+def test_le_gain_ne_porte_que_sur_la_part_du_segment():
+    """C'est le coeur du simulateur, et ce qu'il faut savoir expliquer.
+
+    Demander 20 % de mieux sur un segment qui pese 10 % des ventes n'ameliore
+    pas l'annee de 20 %, mais de 2 % : 20 % x 10 %.
+    """
+    # Arrange : 5000 deja vendus, 5000 encore attendus, objectif 10 000
+    resultat = simuler_atterrissage(
+        realise_connu=5000, prevu_restant=5000, objectif_annuel=10000,
+        poids_segment=0.10, gain_pct=20,
+    )
+
+    # Assert : 5000 x 0,10 x 0,20 = 100 ventes de plus
+    assert resultat["total_initial"] == 10000
+    assert resultat["gain_ventes"] == 100
+    assert resultat["total_simule"] == 10100
+    assert resultat["taux_initial"] == 100.0
+    assert resultat["taux_simule"] == 101.0
+
+
+def test_un_gain_nul_ne_change_pas_l_atterrissage():
+    resultat = simuler_atterrissage(5000, 5000, 12000, 0.5, 0)
+    assert resultat["total_simule"] == resultat["total_initial"]
+    assert resultat["gain_ventes"] == 0
+
+
+def test_le_simulateur_accepte_une_baisse():
+    """Un gain negatif simule un scenario defavorable, ce qui est utile aussi."""
+    resultat = simuler_atterrissage(5000, 5000, 10000, 1.0, -10)
+    assert resultat["gain_ventes"] == -500
+    assert resultat["total_simule"] == 9500
+
+
+def test_le_taux_est_indefini_si_l_objectif_est_nul():
+    """Protection contre la division par zero, comme pour le taux de realisation."""
+    resultat = simuler_atterrissage(5000, 5000, 0, 1.0, 10)
+    assert resultat["taux_initial"] is None
+    assert resultat["taux_simule"] is None
+
+
+def test_le_gain_necessaire_repond_a_la_question_inverse():
+    """Combien faut-il gagner sur ce segment pour atteindre tout juste l'objectif ?
+
+    Il manque 500 ventes ; le segment represente 1000 des ventes restantes ;
+    il faut donc y gagner 50 %.
+    """
+    assert gain_necessaire(realise_connu=5000, prevu_restant=5000,
+                           objectif_annuel=10500, poids_segment=0.20) == 50.0
+
+
+def test_aucun_gain_necessaire_si_l_objectif_est_deja_projete_atteint():
+    assert gain_necessaire(5000, 5000, 9000, 0.5) is None
+
+
+def test_aucun_gain_necessaire_si_le_segment_ne_vend_rien():
+    """Un segment sans ventes ne peut rien rattraper : on ne renvoie pas
+    un pourcentage infini, mais None."""
+    assert gain_necessaire(5000, 5000, 12000, 0.0) is None
