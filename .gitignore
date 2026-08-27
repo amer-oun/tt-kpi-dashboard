@@ -52,3 +52,7 @@ skills-lock.json
 # de mots de passe.
 data/kpilot.db
 generer_figure_pytest.py
+generer_drawio.py
+generer_planification.py
+diagrammes/
+KPIlot_planification.xml
