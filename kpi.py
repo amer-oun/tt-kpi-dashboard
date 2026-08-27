@@ -79,6 +79,92 @@ def separer_mois_complets(ventes, part_minimale=PART_MINIMALE_DU_MOIS):
     return ventes[garder], ecartes
 
 
+# ============================================================================
+#  Du constat a la recommandation
+# ============================================================================
+# Les fonctions ci-dessus disent OU L'ON EN EST. Celles qui suivent disent OU
+# AGIR : c'est la difference entre un tableau de bord, qui informe, et un outil
+# d'aide a la decision, qui oriente.
+
+def repartir_effort(ventes, categorie, annee, manque, mois_restants):
+    """Repartit un effort de rattrapage entre les regions.
+
+    PRINCIPE : on ne demande pas le meme effort a une region qui pese 31 % des
+    ventes et a une autre qui en pese 8 %. L'effort est donc reparti au prorata
+    du poids de chaque region dans la categorie, sur l'annee en cours.
+
+    'manque' est le nombre total de ventes a rattraper, 'mois_restants' le
+    nombre de mois pour y parvenir.
+
+    Renvoie un DataFrame trie par poids decroissant :
+        region, poids_pct, effort_total, effort_mensuel
+    Renvoie un DataFrame vide si le calcul n'a pas de sens.
+    """
+    if manque <= 0 or mois_restants <= 0:
+        return pd.DataFrame(columns=["region", "poids_pct", "effort_total",
+                                     "effort_mensuel"])
+
+    lignes = ventes[(ventes["annee"] == annee) & (ventes["categorie"] == categorie)]
+    if lignes.empty or lignes["quantite"].sum() == 0:
+        return pd.DataFrame(columns=["region", "poids_pct", "effort_total",
+                                     "effort_mensuel"])
+
+    poids = lignes.groupby("region")["quantite"].sum()
+    poids = (poids / poids.sum()).sort_values(ascending=False)
+
+    resultat = pd.DataFrame({
+        "region": poids.index,
+        "poids_pct": (poids.values * 100).round(1),
+        "effort_total": (poids.values * manque).round().astype(int),
+        # -(-a // b) : division arrondie vers le HAUT, pour ne pas
+        # sous-estimer l'effort demande.
+        "effort_mensuel": [-(-int(round(p * manque)) // mois_restants)
+                           for p in poids.values],
+    })
+    return resultat.reset_index(drop=True)
+
+
+def evolution_des_parts(ventes, categorie, annee, mois_reference,
+                        dimension="sous_categorie", jours_minimum=15):
+    """Compare la part de chaque valeur d'une dimension au dernier mois connu
+    a sa part moyenne depuis le debut de l'annee.
+
+    POURQUOI LES PARTS ET NON LES VOLUMES : en fin d'annee, tout baisse en
+    volume. Ce qui interesse le responsable, c'est ce qui baisse PLUS QUE LE
+    RESTE, donc ce qui perd du terrain relativement aux autres.
+
+    'dimension' vaut 'sous_categorie' (quelle offre decroche) ou 'region'
+    (quelle region decroche).
+
+    'jours_minimum' protege contre les echantillons trop minces : deux ou trois
+    lignes suffiraient a produire une variation spectaculaire mais denuee de
+    sens.
+
+    Renvoie une Series triee du plus fort recul a la plus forte progression,
+    exprimee en pourcentage. Vide si le calcul n'est pas possible.
+    """
+    vide = pd.Series(dtype=float)
+
+    lignes = ventes[(ventes["annee"] == annee) & (ventes["categorie"] == categorie)]
+    if lignes.empty or lignes["quantite"].sum() == 0:
+        return vide
+
+    part_moyenne = lignes.groupby(dimension)["quantite"].sum() / lignes["quantite"].sum()
+
+    dernier = lignes[lignes["mois"] == mois_reference]
+    if dernier.empty or dernier["quantite"].sum() == 0:
+        return vide
+    if dernier["date"].nunique() < jours_minimum:
+        return vide
+
+    part_dernier = dernier.groupby(dimension)["quantite"].sum() / dernier["quantite"].sum()
+
+    # On ne divise que par des parts moyennes non nulles
+    part_moyenne = part_moyenne[part_moyenne > 0]
+    evolution = ((part_dernier - part_moyenne) / part_moyenne * 100).dropna()
+    return evolution.sort_values()
+
+
 def calculer_kpi(ventes, objectifs):
     """Calcule le KPI mensuel par categorie (ventes reelles vs objectif).
 

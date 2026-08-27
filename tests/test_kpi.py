@@ -14,7 +14,8 @@ Lancer les tests :  pytest -v
 
 import pandas as pd
 
-from kpi import preparer_ventes, calculer_kpi, separer_mois_complets
+from kpi import (preparer_ventes, calculer_kpi, separer_mois_complets,
+                 repartir_effort, evolution_des_parts)
 
 
 def test_preparer_ventes_ajoute_annee_et_mois():
@@ -190,3 +191,132 @@ def test_un_mois_a_moitie_rempli_est_conserve():
     retenues, ecartes = separer_mois_complets(ventes)
     assert ecartes == []
     assert len(retenues) == 16
+
+
+# ============================================================================
+#  Du constat a la recommandation
+# ============================================================================
+def _ventes_par_region(regions_et_quantites, annee=2026, mois=1, nb_jours=20):
+    """Fabrique des ventes reparties entre plusieurs regions.
+
+    regions_et_quantites : dictionnaire {region: quantite par jour}.
+    """
+    lignes = []
+    for jour in range(1, nb_jours + 1):
+        for region, quantite in regions_et_quantites.items():
+            lignes.append({
+                "date": f"{annee}-{mois:02d}-{jour:02d}",
+                "categorie": "Internet Fixe",
+                "sous_categorie": "ADSL",
+                "quantite": quantite,
+                "region": region,
+            })
+    return preparer_ventes(pd.DataFrame(lignes))
+
+
+def test_l_effort_est_reparti_au_prorata_du_poids_des_regions():
+    """Une region qui pese 75 % des ventes doit porter 75 % de l'effort."""
+    # Arrange : Sfax vend trois fois plus que Gabes (75 % / 25 %)
+    ventes = _ventes_par_region({"Sfax": 30, "Gabes": 10})
+
+    # Act : 400 ventes a rattraper sur 4 mois
+    effort = repartir_effort(ventes, "Internet Fixe", 2026, 400, 4)
+
+    # Assert
+    assert list(effort["region"]) == ["Sfax", "Gabes"]      # trie par poids
+    assert effort.loc[0, "poids_pct"] == 75.0
+    assert effort.loc[1, "poids_pct"] == 25.0
+    assert effort.loc[0, "effort_total"] == 300
+    assert effort.loc[1, "effort_total"] == 100
+    assert effort.loc[0, "effort_mensuel"] == 75            # 300 / 4
+    assert effort.loc[1, "effort_mensuel"] == 25            # 100 / 4
+
+
+def test_l_effort_mensuel_est_arrondi_vers_le_haut():
+    """On ne doit jamais sous-estimer l'effort a fournir.
+
+    10 ventes a rattraper en 3 mois font 3,33 par mois : on annonce 4, pas 3.
+    """
+    ventes = _ventes_par_region({"Sfax": 10})
+    effort = repartir_effort(ventes, "Internet Fixe", 2026, 10, 3)
+    assert effort.loc[0, "effort_total"] == 10
+    assert effort.loc[0, "effort_mensuel"] == 4
+
+
+def test_aucun_effort_a_repartir_si_l_objectif_est_atteint():
+    """Un manque nul ou negatif ne donne aucune recommandation."""
+    ventes = _ventes_par_region({"Sfax": 10, "Gabes": 10})
+    assert repartir_effort(ventes, "Internet Fixe", 2026, 0, 6).empty
+    assert repartir_effort(ventes, "Internet Fixe", 2026, -50, 6).empty
+
+
+def test_aucun_effort_a_repartir_si_l_annee_est_terminee():
+    """Sans mois restant, l'ecart ne peut plus etre rattrape."""
+    ventes = _ventes_par_region({"Sfax": 10})
+    assert repartir_effort(ventes, "Internet Fixe", 2026, 100, 0).empty
+
+
+def test_l_evolution_des_parts_repere_ce_qui_decroche():
+    """Une offre dont la part recule doit apparaitre en tete du classement."""
+    # Arrange : en janvier, ADSL et FO se partagent les ventes a parts egales ;
+    # en fevrier, ADSL s'effondre.
+    lignes = []
+    for jour in range(1, 21):
+        lignes.append({"date": f"2026-01-{jour:02d}", "categorie": "Internet Fixe",
+                       "sous_categorie": "ADSL", "quantite": 10, "region": "Sfax"})
+        lignes.append({"date": f"2026-01-{jour:02d}", "categorie": "Internet Fixe",
+                       "sous_categorie": "FO", "quantite": 10, "region": "Sfax"})
+    for jour in range(1, 21):
+        lignes.append({"date": f"2026-02-{jour:02d}", "categorie": "Internet Fixe",
+                       "sous_categorie": "ADSL", "quantite": 2, "region": "Sfax"})
+        lignes.append({"date": f"2026-02-{jour:02d}", "categorie": "Internet Fixe",
+                       "sous_categorie": "FO", "quantite": 18, "region": "Sfax"})
+    ventes = preparer_ventes(pd.DataFrame(lignes))
+
+    # Act : on compare fevrier a la moyenne de l'annee
+    evolution = evolution_des_parts(ventes, "Internet Fixe", 2026, 2,
+                                    "sous_categorie")
+
+    # Assert : ADSL arrive en tete (le plus fort recul) et FO progresse
+    assert evolution.index[0] == "ADSL"
+    assert evolution["ADSL"] < 0
+    assert evolution["FO"] > 0
+
+
+def test_l_evolution_ignore_un_echantillon_trop_mince():
+    """Deux journees ne suffisent pas a conclure quoi que ce soit.
+
+    Sans cette protection, un fichier partiel produirait des variations
+    spectaculaires (+1900 %) et denuees de sens.
+    """
+    lignes = []
+    for jour in range(1, 21):
+        lignes.append({"date": f"2026-01-{jour:02d}", "categorie": "Internet Fixe",
+                       "sous_categorie": "ADSL", "quantite": 10, "region": "Sfax"})
+    # Fevrier ne compte que deux journees
+    for jour in (1, 2):
+        lignes.append({"date": f"2026-02-{jour:02d}", "categorie": "Internet Fixe",
+                       "sous_categorie": "FO", "quantite": 50, "region": "Sfax"})
+    ventes = preparer_ventes(pd.DataFrame(lignes))
+
+    assert evolution_des_parts(ventes, "Internet Fixe", 2026, 2).empty
+
+
+def test_l_evolution_fonctionne_aussi_sur_les_regions():
+    """La meme fonction sert a reperer une offre ou une region qui decroche."""
+    lignes = []
+    for jour in range(1, 21):
+        lignes.append({"date": f"2026-01-{jour:02d}", "categorie": "Internet Fixe",
+                       "sous_categorie": "ADSL", "quantite": 10, "region": "Sfax"})
+        lignes.append({"date": f"2026-01-{jour:02d}", "categorie": "Internet Fixe",
+                       "sous_categorie": "ADSL", "quantite": 10, "region": "Gabes"})
+    for jour in range(1, 21):
+        lignes.append({"date": f"2026-02-{jour:02d}", "categorie": "Internet Fixe",
+                       "sous_categorie": "ADSL", "quantite": 2, "region": "Sfax"})
+        lignes.append({"date": f"2026-02-{jour:02d}", "categorie": "Internet Fixe",
+                       "sous_categorie": "ADSL", "quantite": 18, "region": "Gabes"})
+    ventes = preparer_ventes(pd.DataFrame(lignes))
+
+    evolution = evolution_des_parts(ventes, "Internet Fixe", 2026, 2, "region")
+    assert evolution.index[0] == "Sfax"
+    assert evolution["Sfax"] < 0

@@ -30,6 +30,7 @@ ecrit directement dans la base.
 
 import hashlib
 import os
+from datetime import datetime
 import sqlite3
 
 import pandas as pd
@@ -123,12 +124,15 @@ def ouvrir_connexion():
 
 
 def creer_tables(connexion):
-    """Cree les trois tables de l'application si elles n'existent pas.
+    """Cree les quatre tables de l'application si elles n'existent pas.
 
     - utilisateurs : les comptes et leur role ;
     - ventes       : les realisations journalieres (une ligne = un jour,
                      une sous-categorie, une region) ;
-    - objectifs    : la cible mensuelle de chaque categorie.
+    - objectifs    : la cible mensuelle de chaque categorie ;
+    - actions      : les decisions prises face aux ecarts, et les reponses
+                     de la direction. C'est la seule table que l'utilisateur
+                     alimente lui-meme, depuis l'interface.
 
     "IF NOT EXISTS" evite une erreur si la table est deja la.
     """
@@ -164,6 +168,26 @@ def creer_tables(connexion):
             annee             INTEGER NOT NULL,
             mois              INTEGER NOT NULL,
             objectif_mensuel  INTEGER NOT NULL
+        )
+        """
+    )
+    connexion.execute(
+        """
+        CREATE TABLE IF NOT EXISTS actions (
+            id                INTEGER PRIMARY KEY AUTOINCREMENT,
+            categorie         TEXT    NOT NULL,
+            annee             INTEGER NOT NULL,
+            mois              INTEGER NOT NULL,
+            perimetre         TEXT,
+            texte             TEXT    NOT NULL,
+            echeance          TEXT,
+            statut            TEXT    NOT NULL DEFAULT 'ouverte',
+            auteur            TEXT    NOT NULL,
+            role_auteur       TEXT    NOT NULL,
+            date_creation     TEXT    NOT NULL,
+            reponse           TEXT,
+            auteur_reponse    TEXT,
+            date_reponse      TEXT
         )
         """
     )
@@ -292,6 +316,7 @@ def compter_lignes():
             "utilisateurs": connexion.execute("SELECT COUNT(*) FROM utilisateurs").fetchone()[0],
             "ventes": connexion.execute("SELECT COUNT(*) FROM ventes").fetchone()[0],
             "objectifs": connexion.execute("SELECT COUNT(*) FROM objectifs").fetchone()[0],
+            "actions": connexion.execute("SELECT COUNT(*) FROM actions").fetchone()[0],
         }
     finally:
         connexion.close()
@@ -470,6 +495,129 @@ def lire_utilisateur(nom_utilisateur):
     if ligne is None:
         return None
     return {"nom_utilisateur": ligne[0], "role": ligne[1], "nom_complet": ligne[2]}
+
+
+# ============================================================================
+#  7. Plan d'action : le dialogue entre le responsable et la direction
+# ============================================================================
+STATUTS = ("ouverte", "en cours", "close")
+
+
+def creer_action(categorie, annee, mois, texte, auteur, role_auteur,
+                 perimetre=None, echeance=None):
+    """Enregistre une action decidee face a un ecart.
+
+    'perimetre' precise sur quoi porte l'action (une region, une offre) ;
+    'echeance' est une date au format AAAA-MM-JJ, ou None.
+
+    Renvoie l'identifiant de l'action creee.
+    """
+    if not texte or not texte.strip():
+        raise ValueError("Une action doit comporter un texte.")
+
+    connexion = ouvrir_connexion()
+    try:
+        curseur = connexion.execute(
+            """INSERT INTO actions
+               (categorie, annee, mois, perimetre, texte, echeance, statut,
+                auteur, role_auteur, date_creation)
+               VALUES (?, ?, ?, ?, ?, ?, 'ouverte', ?, ?, ?)""",
+            (categorie, int(annee), int(mois), perimetre, texte.strip(),
+             echeance, auteur, role_auteur,
+             datetime.now().strftime("%Y-%m-%d %H:%M")),
+        )
+        connexion.commit()
+        return curseur.lastrowid
+    finally:
+        connexion.close()
+
+
+def lire_actions(categorie=None, annee=None, statut=None):
+    """Renvoie les actions, de la plus recente a la plus ancienne.
+
+    Les trois arguments filtrent le resultat ; laisses a None, ils ne
+    filtrent rien. On construit la clause WHERE morceau par morceau, mais
+    les valeurs restent toujours passees en PARAMETRES : aucune saisie
+    utilisateur n'entre dans le texte de la requete.
+    """
+    conditions, valeurs = [], []
+    if categorie:
+        conditions.append("categorie = ?")
+        valeurs.append(categorie)
+    if annee:
+        conditions.append("annee = ?")
+        valeurs.append(int(annee))
+    if statut:
+        conditions.append("statut = ?")
+        valeurs.append(statut)
+
+    requete = "SELECT * FROM actions"
+    if conditions:
+        requete += " WHERE " + " AND ".join(conditions)
+    requete += " ORDER BY date_creation DESC, id DESC"
+
+    connexion = ouvrir_connexion()
+    try:
+        connexion.row_factory = sqlite3.Row
+        lignes = connexion.execute(requete, valeurs).fetchall()
+    finally:
+        connexion.close()
+    return [dict(ligne) for ligne in lignes]
+
+
+def repondre_action(identifiant, reponse, auteur_reponse):
+    """Ajoute la reponse de la direction a une action.
+
+    Renvoie True si l'action existait, False sinon.
+    """
+    if not reponse or not reponse.strip():
+        raise ValueError("Une reponse doit comporter un texte.")
+
+    connexion = ouvrir_connexion()
+    try:
+        curseur = connexion.execute(
+            """UPDATE actions
+               SET reponse = ?, auteur_reponse = ?, date_reponse = ?
+               WHERE id = ?""",
+            (reponse.strip(), auteur_reponse,
+             datetime.now().strftime("%Y-%m-%d %H:%M"), int(identifiant)),
+        )
+        connexion.commit()
+        return curseur.rowcount > 0
+    finally:
+        connexion.close()
+
+
+def changer_statut_action(identifiant, statut):
+    """Fait passer une action d'un statut a un autre.
+
+    Renvoie True si l'action existait, False sinon.
+    """
+    if statut not in STATUTS:
+        raise ValueError(f"Statut inconnu : {statut}. Attendu : {STATUTS}")
+
+    connexion = ouvrir_connexion()
+    try:
+        curseur = connexion.execute(
+            "UPDATE actions SET statut = ? WHERE id = ?",
+            (statut, int(identifiant)),
+        )
+        connexion.commit()
+        return curseur.rowcount > 0
+    finally:
+        connexion.close()
+
+
+def supprimer_action(identifiant):
+    """Supprime une action. Renvoie True si elle existait."""
+    connexion = ouvrir_connexion()
+    try:
+        curseur = connexion.execute("DELETE FROM actions WHERE id = ?",
+                                    (int(identifiant),))
+        connexion.commit()
+        return curseur.rowcount > 0
+    finally:
+        connexion.close()
 
 
 # ============================================================================
