@@ -159,6 +159,22 @@ def jauge_taux(valeur, titre):
     return figure
 
 
+def texte_pdf(chaine):
+    """Rend une chaine ecrivable par fpdf2 avec une police de base.
+
+    fpdf2 n'accepte alors que le jeu latin-1, auquel les accents francais
+    appartiennent. Mais le texte d'une action est saisi par l'utilisateur : il
+    peut contenir une emoji, un caractere arabe, un tiret cadratin. Sans ce
+    nettoyage, l'export planterait au moment ou l'on clique dessus.
+
+    Les caracteres non representables sont remplaces par un point
+    d'interrogation, ce qui degrade l'affichage mais ne casse rien.
+    """
+    if chaine is None:
+        return ""
+    return str(chaine).encode("latin-1", errors="replace").decode("latin-1")
+
+
 def texte_alerte(categorie, taux, manque):
     """Retourne la phrase d'alerte pour une catégorie (reutilisee ecran + PDF)."""
     if taux is None:
@@ -170,7 +186,8 @@ def texte_alerte(categorie, taux, manque):
     return f"{categorie} : en retard ({taux} %), il manque {manque} ventes."
 
 
-def generer_rapport_pdf(categorie, annee, total_realise, total_objectif, taux_global, ecart_global, alertes):
+def generer_rapport_pdf(categorie, annee, total_realise, total_objectif, taux_global, ecart_global, alertes,
+                        actions=None):
     """Construit un rapport PDF d'une page et le renvoie en octets (bytes).
     On importe fpdf ICI (import 'paresseux') pour que le dashboard fonctionne
     meme si la librairie n'est pas installee (le bouton afficherait une erreur).
@@ -214,6 +231,42 @@ def generer_rapport_pdf(categorie, annee, total_realise, total_objectif, taux_gl
         manque = int(a["objectif_mensuel"] - a["ventes_reelles"])
         pdf.cell(0, 7, "- " + texte_alerte(a["categorie"], a["taux"], manque),
                  new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+    # ---- Plan d'action : ce qui a ete DECIDE face aux ecarts ----
+    # C'est ce qui distingue une note de pilotage d'un simple releve de
+    # chiffres : le destinataire y lit non seulement l'ecart, mais ce que
+    # l'on compte faire et ce que la direction en a dit.
+    if actions:
+        pdf.ln(4)
+        pdf.set_font("Helvetica", "B", 13)
+        pdf.cell(0, 9, "Plan d'action", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        pdf.set_font("Helvetica", "", 10)
+
+        for action in actions:
+            entete = f"[{action['statut'].upper()}] {action['texte']}"
+            if action.get("perimetre"):
+                entete += f" ({action['perimetre']})"
+            pdf.multi_cell(0, 6, texte_pdf("- " + entete),
+                           new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+            pdf.set_font("Helvetica", "I", 9)
+            pdf.set_text_color(110, 110, 110)
+            details = f"   ouverte par {action['auteur']} le {action['date_creation']}"
+            if action.get("echeance"):
+                details += f", echeance {action['echeance']}"
+            pdf.multi_cell(0, 5, texte_pdf(details),
+                           new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+            if action.get("reponse"):
+                pdf.multi_cell(
+                    0, 5,
+                    texte_pdf(f"   Direction ({action['auteur_reponse']}) : "
+                              f"{action['reponse']}"),
+                    new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+
+            pdf.set_font("Helvetica", "", 10)
+            pdf.set_text_color(30, 41, 59)
+            pdf.ln(2)
 
     return bytes(pdf.output())
 
@@ -1249,6 +1302,7 @@ colonne_csv.download_button(
 rapport_pdf = generer_rapport_pdf(
     categorie_choisie, annee_choisie, total_realise, total_objectif,
     taux_global, ecart_global, alertes,
+    actions=bd.lire_actions(categorie=categorie_choisie, annee=annee_choisie),
 )
 colonne_pdf.download_button(
     label="Exporter le rapport (PDF)",

@@ -23,6 +23,7 @@ generer_figures.py
 generer_figure_bdd.py
 generer_figures_planning.py
 generer_figures_gestion.py
+generer_figures_dialogue.py
 sauvegardes/
 
 # Figures et logos du rapport (personnels, non utilises par l'app)
