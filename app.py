@@ -7,7 +7,8 @@ import plotly.graph_objects as go
 import streamlit as st
 
 # Logique de calcul KPI partagee avec calcul_kpi.py (voir kpi.py)
-from kpi import preparer_ventes, calculer_kpi, separer_mois_complets
+from kpi import (preparer_ventes, calculer_kpi, separer_mois_complets,
+                 repartir_effort, evolution_des_parts)
 
 # Base de donnees SQLite : comptes utilisateurs, ventes et objectifs
 # (voir base_donnees.py pour le detail des tables et de la securite)
@@ -592,12 +593,12 @@ LIBELLE_ROLE = {
 
 ONGLETS_PAR_ROLE = {
     "responsable_commercial": [
-        "Saisie / Import", "Tableau & mensuel", "Suivi cumulé",
+        "Saisie / Import", "Plan d'action", "Tableau & mensuel", "Suivi cumulé",
         "Détail sous-catégories", "Comparaison catégories",
         "Analyse régionale", "Prévision & alertes",
     ],
     "analyste_direction": [
-        "Tableau & mensuel", "Suivi cumulé",
+        "Plan d'action", "Tableau & mensuel", "Suivi cumulé",
         "Détail sous-catégories", "Comparaison catégories",
         "Analyse régionale", "Prévision & alertes",
     ],
@@ -1374,6 +1375,189 @@ if "Saisie / Import" in onglets:
             # sinon l'ancien fichier serait reimporte immediatement.
             st.session_state["uploader_key"] += 1
             st.rerun()
+
+# ============================================================================
+#  Onglet « Plan d'action » : le dialogue entre les deux acteurs
+# ============================================================================
+# Jusqu'ici, l'application s'arretait au constat : elle annonçait un ecart et
+# n'allait pas plus loin. Cet onglet ferme la boucle. Le responsable commercial
+# y consigne ce qu'il decide face a l'ecart ; la direction lui repond ; le
+# statut suit l'action dans le temps.
+#
+# Les deux roles voient le meme fil, mais n'y font pas la meme chose : le
+# formulaire d'ouverture n'est construit que pour le responsable, celui de
+# reponse que pour la direction.
+with onglets["Plan d'action"]:
+    st.subheader(f"Plan d'action - {categorie_choisie} {annee_choisie}")
+
+    # --- Ce que le systeme recommande, avant ce que l'humain decide ---
+    ligne_cat = alertes[alertes["categorie"] == categorie_choisie]
+    manque_cat = int(ligne_cat["manque"].iloc[0]) if len(ligne_cat) else 0
+
+    if manque_cat > 0 and mois_restants > 0:
+        st.markdown("##### Où porter l'effort")
+        st.caption(
+            f"Il manque **{manque_cat} ventes** sur l'objectif {annee_choisie}. "
+            f"Le tableau ci-dessous répartit cet effort entre les régions, au "
+            f"prorata de leur poids dans les ventes de {categorie_choisie}."
+        )
+
+        effort = repartir_effort(ventes, categorie_choisie, annee_choisie,
+                                 manque_cat, mois_restants)
+        if len(effort):
+            affichage = effort.rename(columns={
+                "region": "Région", "poids_pct": "Poids (%)",
+                "effort_total": "À rattraper", "effort_mensuel": "Par mois",
+            })
+            st.dataframe(affichage, width="stretch", hide_index=True)
+
+        # Ce qui decroche : l'urgence n'est pas toujours la ou est le volume
+        col_offre, col_region = st.columns(2)
+        for colonne, dimension, titre in [
+            (col_offre, "sous_categorie", "Offres en recul"),
+            (col_region, "region", "Régions en recul"),
+        ]:
+            evolution = evolution_des_parts(ventes, categorie_choisie,
+                                            annee_choisie, mois_connus, dimension)
+            en_recul = evolution[evolution < 0]
+            with colonne:
+                st.markdown(f"**{titre}**")
+                if len(en_recul):
+                    for nom, variation in en_recul.items():
+                        st.markdown(f"- {nom} &nbsp;<span style='color:{ROUGE};'>"
+                                    f"{variation:+.1f} %</span>",
+                                    unsafe_allow_html=True)
+                else:
+                    st.caption("Aucun recul relevé le dernier mois.")
+        st.caption(
+            "Lecture : ces pourcentages comparent la **part** de chaque offre ou "
+            "région au dernier mois connu à sa part moyenne depuis janvier. Une "
+            "part qui recule signale un décrochage relatif, même si le volume "
+            "se maintient."
+        )
+    else:
+        st.success(
+            f"{categorie_choisie} est au niveau de son objectif cumulé "
+            f"{annee_choisie} : aucun effort de rattrapage à répartir."
+        )
+
+    st.divider()
+
+    # --- Ouvrir une action : reserve au responsable commercial ---
+    if role_utilisateur == "responsable_commercial":
+        st.markdown("##### Décider d'une action")
+        with st.form("form_action", clear_on_submit=True):
+            texte_action = st.text_area(
+                "Action décidée",
+                placeholder="Ex. : renfort commercial à Bizerte sur l'offre ADSL",
+            )
+            col1, col2 = st.columns(2)
+            perimetre = col1.text_input(
+                "Périmètre concerné (facultatif)",
+                placeholder="Ex. : Bizerte / ADSL",
+            )
+            echeance = col2.date_input("Échéance", value=None, format="DD/MM/YYYY")
+            enregistrer = st.form_submit_button("Enregistrer l'action",
+                                                type="primary", width="stretch")
+
+        if enregistrer:
+            if not texte_action.strip():
+                st.error("L'action doit comporter une description.")
+            else:
+                bd.creer_action(
+                    categorie=categorie_choisie,
+                    annee=annee_choisie,
+                    mois=mois_connus,
+                    texte=texte_action,
+                    auteur=utilisateur["nom_utilisateur"],
+                    role_auteur=role_utilisateur,
+                    perimetre=perimetre.strip() or None,
+                    echeance=echeance.isoformat() if echeance else None,
+                )
+                st.success("Action enregistrée. La direction peut désormais y répondre.")
+                st.rerun()
+    else:
+        st.info(
+            "La création d'une action est réservée au responsable commercial. "
+            "Vous pouvez répondre aux actions ouvertes ci-dessous."
+        )
+
+    st.divider()
+
+    # --- Le fil : commun aux deux roles ---
+    st.markdown("##### Fil des décisions")
+    actions = bd.lire_actions(categorie=categorie_choisie, annee=annee_choisie)
+
+    if not actions:
+        st.caption(
+            "Aucune action enregistrée pour ce périmètre. Le fil se remplit à "
+            "mesure que des décisions sont prises face aux écarts."
+        )
+
+    for action in actions:
+        couleur_statut = {"ouverte": ORANGE, "en cours": BLEU, "close": VERT}
+        with st.container(border=True):
+            entete = f"**{action['texte']}**"
+            if action["perimetre"]:
+                entete += f" &nbsp;·&nbsp; {action['perimetre']}"
+            st.markdown(entete, unsafe_allow_html=True)
+
+            details = [f"ouverte par **{action['auteur']}** le {action['date_creation']}"]
+            if action["echeance"]:
+                details.append(f"échéance : {action['echeance']}")
+            st.markdown(
+                f"<span style='color:{couleur_statut.get(action['statut'], GRIS)};"
+                f"font-weight:700;text-transform:uppercase;font-size:.74rem;"
+                f"letter-spacing:.8px;'>{action['statut']}</span> "
+                f"<span style='color:{GRIS};font-size:.86rem;'>"
+                + " &nbsp;·&nbsp; ".join(details) + "</span>",
+                unsafe_allow_html=True,
+            )
+
+            # La reponse de la direction, si elle existe
+            if action["reponse"]:
+                st.markdown(
+                    f"<div style='border-left:3px solid {BLEU};padding-left:12px;"
+                    f"margin-top:10px;'>"
+                    f"<span style='color:{BLEU};font-weight:700;font-size:.8rem;'>"
+                    f"Réponse de la direction</span><br>{action['reponse']}<br>"
+                    f"<span style='color:{GRIS};font-size:.8rem;'>"
+                    f"{action['auteur_reponse']} &nbsp;·&nbsp; {action['date_reponse']}"
+                    f"</span></div>",
+                    unsafe_allow_html=True,
+                )
+
+            # --- Ce que chaque role peut faire sur cette action ---
+            if role_utilisateur == "analyste_direction" and not action["reponse"]:
+                with st.form(f"reponse_{action['id']}", clear_on_submit=True):
+                    texte_reponse = st.text_input(
+                        "Répondre", placeholder="Ex. : validé, budget accordé",
+                        label_visibility="collapsed",
+                    )
+                    if st.form_submit_button("Répondre"):
+                        if texte_reponse.strip():
+                            bd.repondre_action(action["id"], texte_reponse,
+                                               utilisateur["nom_utilisateur"])
+                            st.rerun()
+                        else:
+                            st.error("La réponse ne peut pas être vide.")
+
+            if role_utilisateur == "responsable_commercial":
+                col_statut, col_suppr = st.columns([3, 1])
+                suivants = [s for s in bd.STATUTS if s != action["statut"]]
+                nouveau_statut = col_statut.selectbox(
+                    "Statut", suivants, key=f"statut_{action['id']}",
+                    label_visibility="collapsed",
+                    index=None, placeholder="Faire évoluer le statut...",
+                )
+                if nouveau_statut:
+                    bd.changer_statut_action(action["id"], nouveau_statut)
+                    st.rerun()
+                if col_suppr.button("Supprimer", key=f"suppr_{action['id']}",
+                                    width="stretch"):
+                    bd.supprimer_action(action["id"])
+                    st.rerun()
+
 
 # --- Onglet 1 : tableau KPI + histogramme mensuel ---
 with onglets["Tableau & mensuel"]:
