@@ -56,3 +56,4 @@ generer_drawio.py
 generer_planification.py
 diagrammes/
 KPIlot_planification.xml
+convertir_figures_msproject.py
